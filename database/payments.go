@@ -44,7 +44,6 @@ func GetPayments(Context openruntimes.Context, client client.Client, limit int, 
 	return &paymentList, nil
 }
 
-// UpdatePayment updates an existing payment record.
 func UpdatePayment(client client.Client, documentId string, paymentStatus *model.PaymentStatus) (*model.Payment, error) {
 	if documentId == "" {
 		return nil, fmt.Errorf("documentId is required to update payment")

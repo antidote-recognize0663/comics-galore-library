@@ -2,21 +2,6 @@ package model
 
 import "github.com/appwrite/sdk-for-go/models"
 
-// PaymentStatusEnum defines possible status values for a payment
-type PaymentStatusEnum string
-
-const (
-	StatusWaiting       PaymentStatusEnum = "waiting"
-	StatusConfirming    PaymentStatusEnum = "confirming"
-	StatusConfirmed     PaymentStatusEnum = "confirmed"
-	StatusSending       PaymentStatusEnum = "sending"
-	StatusPartiallyPaid PaymentStatusEnum = "partially_paid"
-	StatusFinished      PaymentStatusEnum = "finished"
-	StatusFailed        PaymentStatusEnum = "failed"
-	StatusRefunded      PaymentStatusEnum = "refunded"
-	StatusExpired       PaymentStatusEnum = "expired"
-)
-
 // PaymentStatus represents the payment status response
 type PaymentStatus struct {
 	PaymentID       string            `json:"payment_id"`

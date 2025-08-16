@@ -18,3 +18,13 @@ type Statistic struct {
 	*models.Document
 	*StatisticData
 }
+
+type ChartData struct {
+	Value int64  `json:"value"`
+	Label string `json:"label"`
+}
+
+type Chart struct {
+	*models.Document
+	*ChartData
+}
