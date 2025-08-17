@@ -9,6 +9,10 @@ import (
 )
 
 type PaymentService interface {
+	WithDatabaseID(databaseID string) PaymentOption
+	WithCollectionID(collectionID string) PaymentOption
+	WithQueryOrderBy(field string, ascending bool) func([]string) []string
+	WithQueryStatusNotEqual(status string) func([]string) []string
 	GetPayments(limit int, offset int, opts ...func([]string) []string) (*model.PaymentList, error)
 	UpdatePayment(documentId string, notification map[string]interface{}) (*model.Payment, error)
 }
@@ -19,7 +23,7 @@ type paymentService struct {
 	client       *client.Client
 }
 
-func WithQueryPaymentStatusNotEqual(status string) func([]string) []string {
+func (p *paymentService) WithQueryStatusNotEqual(status string) func([]string) []string {
 	return func(queries []string) []string {
 		if status != "" {
 			queries = append(queries, query.NotEqual("payment_status", status))
@@ -28,7 +32,7 @@ func WithQueryPaymentStatusNotEqual(status string) func([]string) []string {
 	}
 }
 
-func WithQueryPaymentOrderBy(field string, ascending bool) func([]string) []string {
+func (p *paymentService) WithQueryOrderBy(field string, ascending bool) func([]string) []string {
 	return func(queries []string) []string {
 		if field != "" {
 			queries = append(queries, query.OrderDesc(field))
@@ -40,7 +44,7 @@ func WithQueryPaymentOrderBy(field string, ascending bool) func([]string) []stri
 	}
 }
 
-func (p paymentService) GetPayments(limit int, offset int, opts ...func([]string) []string) (*model.PaymentList, error) {
+func (p *paymentService) GetPayments(limit int, offset int, opts ...func([]string) []string) (*model.PaymentList, error) {
 	database := databases.New(*p.client)
 	queries := []string{
 		query.Limit(limit),
@@ -64,7 +68,7 @@ func (p paymentService) GetPayments(limit int, offset int, opts ...func([]string
 	return &paymentList, nil
 }
 
-func (p paymentService) UpdatePayment(documentID string, notification map[string]interface{}) (*model.Payment, error) {
+func (p *paymentService) UpdatePayment(documentID string, notification map[string]interface{}) (*model.Payment, error) {
 	if documentID == "" {
 		return nil, fmt.Errorf("documentID is required to update payment")
 	}
@@ -106,13 +110,13 @@ type PaymentConfig struct {
 
 type PaymentOption func(*PaymentConfig)
 
-func WithPaymentCollectionID(collectionID string) PaymentOption {
+func (p *paymentService) WithCollectionID(collectionID string) PaymentOption {
 	return func(config *PaymentConfig) {
 		config.collectionID = collectionID
 	}
 }
 
-func WithPaymentDatabaseID(databaseID string) PaymentOption {
+func (p *paymentService) WithDatabaseID(databaseID string) PaymentOption {
 	return func(config *PaymentConfig) {
 		config.databaseID = databaseID
 	}

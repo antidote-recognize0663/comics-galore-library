@@ -9,13 +9,17 @@ import (
 )
 
 type UserService interface {
-	UpdateLabelsByUserId(userId string) (*model.User, error)
+	AddSubscriberToUserLabels(userId string) (*model.User, error)
 }
 
 type userService struct {
-	databaseID   string
-	collectionID string
-	client       *client.Client
+	client *client.Client
+}
+
+func NewUserService(client *client.Client) UserService {
+	return &userService{
+		client: client,
+	}
 }
 
 func mapUser(user *models.User) (*model.User, error) {

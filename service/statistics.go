@@ -8,6 +8,9 @@ import (
 )
 
 type StatisticService interface {
+	WithDocumentID(documentID string) StatisticOption
+	WithDatabaseID(databaseID string) StatisticOption
+	WithCollectionID(collectionID string) StatisticOption
 	Increment(attributeName string) (int64, error)
 	Decrement(attributeName string) (int64, error)
 	GetValue(attributeName string) (int64, error)
@@ -28,19 +31,19 @@ type StatisticConfig struct {
 
 type StatisticOption func(*StatisticConfig)
 
-func WithDocumentID(documentID string) StatisticOption {
+func (s *statisticService) WithDocumentID(documentID string) StatisticOption {
 	return func(config *StatisticConfig) {
 		config.documentID = documentID
 	}
 }
 
-func WithCollectionID(collectionID string) StatisticOption {
+func (s *statisticService) WithCollectionID(collectionID string) StatisticOption {
 	return func(config *StatisticConfig) {
 		config.collectionID = collectionID
 	}
 }
 
-func WithDatabaseID(databaseID string) StatisticOption {
+func (s *statisticService) WithDatabaseID(databaseID string) StatisticOption {
 	return func(config *StatisticConfig) {
 		config.databaseID = databaseID
 	}
@@ -63,7 +66,7 @@ func NewStatisticService(client *client.Client, opts ...StatisticOption) Statist
 	}
 }
 
-func (s statisticService) Increment(attributeName string) (int64, error) {
+func (s *statisticService) Increment(attributeName string) (int64, error) {
 	db := databases.New(*s.client)
 	db.WithGetDocumentQueries([]string{query.Select([]string{attributeName})})
 	document, err := db.IncrementDocumentAttribute(
@@ -86,7 +89,7 @@ func (s statisticService) Increment(attributeName string) (int64, error) {
 	return int64(newValue), nil
 }
 
-func (s statisticService) Decrement(attributeName string) (int64, error) {
+func (s *statisticService) Decrement(attributeName string) (int64, error) {
 	db := databases.New(*s.client)
 	db.WithGetDocumentQueries([]string{query.Select([]string{attributeName})})
 	document, err := db.DecrementDocumentAttribute(
@@ -109,7 +112,7 @@ func (s statisticService) Decrement(attributeName string) (int64, error) {
 	return int64(newValue), nil
 }
 
-func (s statisticService) GetValue(attributeName string) (int64, error) {
+func (s *statisticService) GetValue(attributeName string) (int64, error) {
 	db := databases.New(*s.client)
 	db.WithGetDocumentQueries([]string{query.Select([]string{attributeName})})
 	document, err := db.GetDocument(
