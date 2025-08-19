@@ -3,13 +3,15 @@ package services
 import (
 	"fmt"
 	"github.com/antidote-recognize0663/comics-galore-library/model"
+	"github.com/antidote-recognize0663/comics-galore-library/utils"
 	"github.com/appwrite/sdk-for-go/client"
 	"github.com/appwrite/sdk-for-go/models"
 	"github.com/appwrite/sdk-for-go/users"
 )
 
 type UserService interface {
-	AddSubscriberToUserLabels(userId string) (*model.User, error)
+	AddSubscriberToLabels(userId string) (*model.User, error)
+	RemoveSubscriberFromLabels(userId string) (*model.User, error)
 }
 
 type userService struct {
@@ -33,11 +35,11 @@ func mapUser(user *models.User) (*model.User, error) {
 	}, nil
 }
 
-func (s *userService) AddSubscriberToUserLabels(userId string) (*model.User, error) {
+func (s *userService) AddSubscriberToLabels(userId string) (*model.User, error) {
 	userDB := users.New(*s.client)
 	fetchedUser, err := userDB.Get(userId)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateLabels error for userId '%s': %v", userId, err)
+		return nil, fmt.Errorf("GetUser error for userId '%s': %v", userId, err)
 	}
 	containsSubscriber := false
 	for _, label := range fetchedUser.Labels {
@@ -54,4 +56,20 @@ func (s *userService) AddSubscriberToUserLabels(userId string) (*model.User, err
 		return mapUser(user)
 	}
 	return mapUser(fetchedUser)
+}
+
+func (s *userService) RemoveSubscriberFromLabels(userId string) (*model.User, error) {
+	userDB := users.New(*s.client)
+	fetchedUser, err := userDB.Get(userId)
+	if err != nil {
+		return nil, fmt.Errorf("GetUser error for userId '%s': %v", userId, err)
+	}
+	fetchedUser.Labels = utils.Filter(fetchedUser.Labels, func(label string) bool {
+		return label != "subscriber"
+	})
+	user, err := userDB.UpdateLabels(userId, fetchedUser.Labels)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateLabels error for userId '%s': %v", userId, err)
+	}
+	return mapUser(user)
 }

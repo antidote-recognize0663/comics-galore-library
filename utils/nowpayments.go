@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/antidote-recognize0663/comics-galore-library/model"
 	"sort"
 	"strings"
 )
@@ -19,14 +18,12 @@ func createCanonicalJSON(payload []byte) (string, error) {
 	if err := json.Unmarshal(payload, &dataMap); err != nil {
 		return "", fmt.Errorf("error parsing JSON for sorting: %w", err)
 	}
-
 	// Sort the keys alphabetically.
 	sortedKeys := make([]string, 0, len(dataMap))
 	for key := range dataMap {
 		sortedKeys = append(sortedKeys, key)
 	}
 	sort.Strings(sortedKeys)
-
 	// Manually build the canonical JSON string from sorted keys and raw values.
 	var builder strings.Builder
 	builder.WriteString("{")
@@ -42,12 +39,11 @@ func createCanonicalJSON(payload []byte) (string, error) {
 		builder.Write(dataMap[key])
 	}
 	builder.WriteString("}")
-
 	return builder.String(), nil
 }
 
-func IsIpnRequestValid(receivedHMAC string, receivedPayload []byte, ipnSecret string) (bool, string, *model.NowPaymentsIPN) {
-	var nowPaymentsIpn model.NowPaymentsIPN
+func ValidatePayload(receivedHMAC string, receivedPayload []byte, ipnSecret string) (bool, string, *metrics.NowPaymentsIPN) {
+	var nowPaymentsIpn metrics.NowPaymentsIPN
 	if err := json.Unmarshal(receivedPayload, &nowPaymentsIpn); err != nil {
 		return false, "Invalid JSON format", nil
 	}

@@ -2,7 +2,6 @@ package model
 
 import "github.com/appwrite/sdk-for-go/models"
 
-// PaymentStatus represents the payment status response
 type PaymentStatus struct {
 	PaymentID       string            `json:"payment_id"`
 	PaymentStatus   PaymentStatusEnum `json:"payment_status"`
@@ -21,7 +20,7 @@ type PaymentStatus struct {
 
 type PaymentList struct {
 	*models.DocumentList
-	*PaymentData
+	Payments []Payment `json:"documents"`
 }
 
 type PaymentData struct {

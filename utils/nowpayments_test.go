@@ -27,7 +27,7 @@ func TestGenerateCorrectHMAC(t *testing.T) {
 	t.Logf("The correct HMAC for your test is: %s", correctHMACForTest)
 }
 
-func TestIsIpnRequestValid(t *testing.T) {
+func TestValidatePayload(t *testing.T) {
 	const ipnSecret = "my-super-secret-ipn-key"
 	const validPayload = `{"payment_id": 12345678, "payment_status": "finished", "price_amount": 10.50, "price_currency": "usd", "pay_amount": 0.00025, "pay_currency": "btc", "order_id": "my-order-987", "created_at": "2025-08-16T00:30:00Z"}`
 	const correctHMAC = "282306035f763e7f75fb594c8fd484928599988a95cee7e682802b3fd75c5c03bf2bd28e48ba225067338e8622247b4d7129f5cd84fe4424c29f081fac551e37"
@@ -77,7 +77,7 @@ func TestIsIpnRequestValid(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			authOK, errorMsg, _ := IsIpnRequestValid(tc.hmac, tc.payload, tc.secret)
+			authOK, errorMsg, _ := ValidatePayload(tc.hmac, tc.payload, tc.secret)
 
 			if authOK != tc.expectAuthOK {
 				t.Errorf("Expected authOK to be %v, but got %v", tc.expectAuthOK, authOK)
