@@ -3,7 +3,7 @@ package payment
 import (
 	"fmt"
 	"github.com/antidote-recognize0663/comics-galore-library/model"
-	"github.com/appwrite/sdk-for-go/client"
+	"github.com/antidote-recognize0663/comics-galore-library/utils"
 	"github.com/appwrite/sdk-for-go/databases"
 	"github.com/appwrite/sdk-for-go/query"
 )
@@ -11,14 +11,16 @@ import (
 type Service interface {
 	WithQueryOrderBy(field string, ascending bool) func([]string) []string
 	WithQueryStatusNotEqual(status string) func([]string) []string
-	GetList(limit int, offset int, opts ...func([]string) []string) (*model.PaymentList, error)
+	GetList(secret string, limit int, offset int, opts ...func([]string) []string) (*model.PaymentList, error)
 	Update(documentId string, notification map[string]interface{}) (*model.Payment, error)
 }
 
 type service struct {
+	apiKey       string
+	endpoint     string
+	projectID    string
 	databaseID   string
 	collectionID string
-	client       *client.Client
 }
 
 func (p *service) WithQueryStatusNotEqual(status string) func([]string) []string {
@@ -30,8 +32,9 @@ func (p *service) WithQueryStatusNotEqual(status string) func([]string) []string
 	}
 }
 
-func (p *service) GetList(limit int, offset int, opts ...func([]string) []string) (*model.PaymentList, error) {
-	database := databases.New(*p.client)
+func (p *service) GetList(secret string, limit int, offset int, opts ...func([]string) []string) (*model.PaymentList, error) {
+	sessionClient := utils.NewSessionClient(secret, utils.WithProject(p.projectID), utils.WithEndpoint(p.endpoint))
+	database := databases.New(*sessionClient)
 	queries := []string{
 		query.Limit(limit),
 		query.Offset(offset),
@@ -58,24 +61,27 @@ func (p *service) Update(documentID string, notification map[string]interface{})
 	if documentID == "" {
 		return nil, fmt.Errorf("documentID is required to update payment")
 	}
-	paymentDB := databases.New(*p.client)
-	document, err := paymentDB.UpdateDocument(
+	sessionClient := utils.NewAdminClient(p.apiKey, utils.WithProject(p.projectID), utils.WithEndpoint(p.endpoint))
+	database := databases.New(*sessionClient)
+	document, err := database.UpdateDocument(
 		p.databaseID,
 		p.collectionID,
 		documentID,
-		paymentDB.WithUpdateDocumentData(notification))
+		database.WithUpdateDocumentData(notification))
 	if err != nil {
-		return nil, fmt.Errorf("Update error for documentID '%s': %v", documentID, err)
+		return nil, fmt.Errorf("update error for documentID '%s': %v", documentID, err)
 	}
 	var payment model.Payment
 	if err := document.Decode(&payment); err != nil {
-		return nil, fmt.Errorf("Update decode error for documentID '%s': %v", documentID, err)
+		return nil, fmt.Errorf("update decode error for documentID '%s': %v", documentID, err)
 	}
 	return &payment, nil
 }
 
-func NewService(client *client.Client, opts ...Option) Service {
+func NewService(opts ...Option) Service {
 	config := &Config{
+		endpoint:     "https://comics-galore.co/v1",
+		projectID:    "6510a59f633f9d57fba2",
 		databaseID:   "6510add9771bcf260b40",
 		collectionID: "67806dd1003557f3794e",
 	}
@@ -83,9 +89,29 @@ func NewService(client *client.Client, opts ...Option) Service {
 		opt(config)
 	}
 	return &service{
-		client:       client,
+		apiKey:       config.apiKey,
+		endpoint:     config.endpoint,
+		projectID:    config.projectID,
 		databaseID:   config.databaseID,
 		collectionID: config.collectionID,
+	}
+}
+
+func WithApiKey(apiKey string) Option {
+	return func(config *Config) {
+		config.apiKey = apiKey
+	}
+}
+
+func WithEndpoint(endpoint string) Option {
+	return func(config *Config) {
+		config.endpoint = endpoint
+	}
+}
+
+func WithProjectID(projectID string) Option {
+	return func(config *Config) {
+		config.projectID = projectID
 	}
 }
 
@@ -115,6 +141,9 @@ func (p *service) WithQueryOrderBy(field string, ascending bool) func([]string) 
 }
 
 type Config struct {
+	apiKey       string
+	endpoint     string
+	projectID    string
 	databaseID   string
 	collectionID string
 }

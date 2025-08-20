@@ -26,7 +26,7 @@ func WithProject(project string) ClientOption {
 
 func NewSessionClient(secret string, opts ...ClientOption) *client.Client {
 	params := endpointParams{
-		Endpoint: "https://nyc.cloud.appwrite.io",
+		Endpoint: "https://fra.cloud.appwrite.io/v1",
 		Project:  "6510a59f633f9d57fba2",
 	}
 	for _, opt := range opts {
@@ -42,7 +42,7 @@ func NewSessionClient(secret string, opts ...ClientOption) *client.Client {
 
 func NewAdminClient(apiKey string, opts ...ClientOption) *client.Client {
 	params := endpointParams{
-		Endpoint: "https://nyc.cloud.appwrite.io",
+		Endpoint: "https://fra.cloud.appwrite.io/v1",
 		Project:  "6510a59f633f9d57fba2",
 	}
 	for _, opt := range opts {

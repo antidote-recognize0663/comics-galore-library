@@ -144,3 +144,11 @@ func (s *images) ListImages(page, perPage int) (*model.CloudflareListImagesRespo
 
 	return &cfResponse, nil
 }
+
+type Config struct {
+	endpoint  string
+	projectID string
+	bucketID  string
+}
+
+type Option func(*Config)
