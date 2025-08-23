@@ -52,10 +52,10 @@ func TestValidate_RegistrationForm(t *testing.T) {
 	}
 
 	// --- Create Mock Files for testing ---
-	validImagePNG := newFileUpload("cover", "cover.png", "image/png", "pngcontent")
-	invalidImageGIF := newFileUpload("cover", "cover.gif", "image/gif", "gifcontent")
-	validDocPDF := newFileUpload("docs", "document.pdf", "application/pdf", "pdfcontent")
-	invalidDocTXT := newFileUpload("docs", "document.txt", "text/plain", "txtcontent")
+	validImagePNG := newFileUpload("cover", "cover.png", "image/png", "png_content")
+	invalidImageGIF := newFileUpload("cover", "cover.gif", "image/gif", "gif_content")
+	validDocPDF := newFileUpload("docs", "document.pdf", "application/pdf", "pdf_content")
+	invalidDocTXT := newFileUpload("docs", "document.txt", "text/plain", "txt_content")
 
 	if validImagePNG == nil || invalidImageGIF == nil || validDocPDF == nil || invalidDocTXT == nil {
 		t.Fatal("Failed to create mock file headers for testing")

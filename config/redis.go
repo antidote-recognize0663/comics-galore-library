@@ -19,7 +19,7 @@ func NewRedisConfig() *RedisConfig {
 		DB:       utils.GetIntEnv("REDIS_DB", 0, &parseErr),
 	}
 	if parseErr != nil {
-		log.Printf("error parsing integer environment variables: %w", parseErr)
+		log.Printf("error parsing integer environment variables: %v", parseErr)
 	}
 	return config
 }

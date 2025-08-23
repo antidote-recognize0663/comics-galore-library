@@ -6,13 +6,14 @@ import (
 	"github.com/antidote-recognize0663/comics-galore-library/model"
 	"github.com/antidote-recognize0663/comics-galore-library/utils"
 	"github.com/appwrite/sdk-for-go/appwrite"
+	"github.com/appwrite/sdk-for-go/models"
 	"resty.dev/v3"
 )
 
 type Session interface {
 	DeleteCurrentSession(secret string) error
-	GetAccount(secret string) (*model.User, error)
-	UpdatePreferences(secret string, prefs *model.Preferences) (*model.User, error)
+	GetAccount(secret string) (*model.Account, error)
+	UpdatePreferences(secret string, prefs *model.Prefs) (*model.Account, error)
 	CreateVerification(secret string, verificationUrl string) (*model.Token, error)
 	VerifyAccount(secret, userId string) (*model.Token, error)
 	UpdateName(secret, name string) (*model.Account, error)
@@ -125,7 +126,7 @@ func (s *session) DeleteCurrentSession(secret string) error {
 	return nil
 }
 
-func (s *session) GetAccount(secret string) (*model.User, error) {
+func (s *session) GetAccount(secret string) (*model.Account, error) {
 	if secret != "" {
 		client := resty.New()
 		resp, err := client.R().
@@ -133,18 +134,18 @@ func (s *session) GetAccount(secret string) (*model.User, error) {
 			SetHeader("X-Appwrite-Session", secret).
 			SetHeader("X-Appwrite-Project", s.projectID).
 			SetHeader("X-Appwrite-Response-Format", "1.6.0").
-			SetResult(&model.User{}).
+			SetResult(&models.User{}).
 			Get(s.endpoint + "/account")
 		if err != nil {
 			return nil, fmt.Errorf("failed to retrieve account information: %w", err)
 		}
-		data := resp.Result().(*model.User)
-		return data, nil
+		data := resp.Result().(*models.User)
+		return model.NewAccount(data), nil
 	}
 	return nil, fmt.Errorf("secret is empty")
 }
 
-func (s *session) UpdatePreferences(secret string, prefs *model.Preferences) (*model.User, error) {
+func (s *session) UpdatePreferences(secret string, prefs *model.Prefs) (*model.Account, error) {
 	request := map[string]interface{}{"prefs": *prefs}
 	client := resty.New()
 	resp, err := client.R().
@@ -153,13 +154,13 @@ func (s *session) UpdatePreferences(secret string, prefs *model.Preferences) (*m
 		SetHeader("X-Appwrite-Project", s.projectID).
 		SetHeader("X-Appwrite-Response-Format", "1.6.0").
 		SetBody(request).
-		SetResult(&model.User{}).
+		SetResult(&models.User{}).
 		Patch(s.endpoint + "/account/prefs")
 	if err != nil {
 		return nil, fmt.Errorf("failed to update preferences: %w", err)
 	}
-	data := resp.Result().(*model.User)
-	return data, nil
+	data := resp.Result().(*models.User)
+	return model.NewAccount(data), nil
 }
 
 func (s *session) CreateVerification(secret string, verificationUrl string) (*model.Token, error) {

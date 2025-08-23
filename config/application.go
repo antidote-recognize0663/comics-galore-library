@@ -27,7 +27,7 @@ func NewApplicationConfig() *ApplicationConfig {
 		JwtSecret: utils.GetEnv("JWT_SECRET", "PzBK+Wmb6LtK+8PfiLQ+dWLCsRnsTQm3v+He14YuZac="),
 	}
 	if parseErr != nil {
-		log.Printf("error parsing integer environment variables: %w", parseErr)
+		log.Printf("error parsing integer environment variables: %v", parseErr)
 	}
 	return config
 }

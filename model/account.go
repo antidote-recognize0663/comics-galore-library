@@ -18,14 +18,11 @@ func NewPrefs(preferences *models.Preferences) *Prefs {
 	if err != nil {
 		log.Println(err)
 	}
-
 	var prefsData Prefs
 	err = json.Unmarshal(prefs, &prefsData)
 	if err != nil {
 		log.Println(err)
 	}
-
-	log.Println(prefsData)
 	return &Prefs{
 		AvatarID: prefsData.AvatarID,
 		Twitter:  prefsData.Twitter,
@@ -45,7 +42,6 @@ func NewAccount(user *models.User) *Account {
 	if err != nil {
 		log.Println(err)
 	}
-
 	/*prefData, err := json.Marshal(user.Prefs)
 	if err != nil {
 		log.Warn(err)

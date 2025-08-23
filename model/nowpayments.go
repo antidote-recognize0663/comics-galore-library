@@ -26,7 +26,7 @@ type PaymentRequest struct {
 	PriceAmount      float64  `json:"price_amount"`                  // (required) The fiat equivalent of the price to be paid in crypto
 	PriceCurrency    string   `json:"price_currency"`                // (required) The fiat currency in which price_amount is specified (e.g., usd, eur)
 	PayAmount        *float64 `json:"pay_amount,omitempty"`          // (optional) The crypto amount users need to pay; if empty, calculated automatically
-	PayCurrency      string   `json:"pay_currency"`                  // (required) The crypto currency (e.g., btc, eth) or enabled fiat currency (e.g., usd, eur)
+	PayCurrency      string   `json:"pay_currency"`                  // (required) The cryptocurrency (e.g., btc, eth) or enabled fiat currency (e.g., usd, eur)
 	IPNCallbackURL   *string  `json:"ipn_callback_url,omitempty"`    // (optional) URL to receive callbacks, e.g., "https://example.com"
 	OrderID          *string  `json:"order_id,omitempty"`            // (optional) Inner store order fileId, e.g., "RGDBP-21314"
 	OrderDescription *string  `json:"order_description,omitempty"`   // (optional) Inner store order description, e.g., "Apple Macbook Pro 2019 x 1"

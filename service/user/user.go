@@ -6,12 +6,11 @@ import (
 	"github.com/antidote-recognize0663/comics-galore-library/model"
 	"github.com/antidote-recognize0663/comics-galore-library/utils"
 	"github.com/appwrite/sdk-for-go/appwrite"
-	"github.com/appwrite/sdk-for-go/models"
 )
 
 type User interface {
-	AddLabel(userId, label string) (*model.User, error)
-	RemoveLabel(userId, label string) (*model.User, error)
+	AddLabel(userId, label string) (*model.Account, error)
+	RemoveLabel(userId, label string) (*model.Account, error)
 }
 
 type user struct {
@@ -68,18 +67,7 @@ func NewUserWithConfig(cfg *config.Config) User {
 	}
 }
 
-func mapUser(user *models.User) (*model.User, error) {
-	var prefs model.Preferences
-	if err := user.Decode(&prefs); err != nil {
-		return nil, err
-	}
-	return &model.User{
-		User:        user,
-		Preferences: &prefs,
-	}, nil
-}
-
-func (s *user) AddLabel(userId, label string) (*model.User, error) {
+func (s *user) AddLabel(userId, label string) (*model.Account, error) {
 	userDB := appwrite.NewUsers(*utils.NewAdminClient(s.apiKey, utils.WithEndpoint(s.endpoint), utils.WithProject(s.project), utils.WithEndpoint(s.endpoint)))
 	fetchedUser, err := userDB.Get(userId)
 	if err != nil {
@@ -93,27 +81,27 @@ func (s *user) AddLabel(userId, label string) (*model.User, error) {
 		}
 	}
 	if !containsSubscriber {
-		user, err := userDB.UpdateLabels(userId, append(fetchedUser.Labels, "subscriber"))
+		userAccount, err := userDB.UpdateLabels(userId, append(fetchedUser.Labels, "subscriber"))
 		if err != nil {
 			return nil, fmt.Errorf("AddLabel error for userId '%s': %v", userId, err)
 		}
-		return mapUser(user)
+		return model.NewAccount(userAccount), nil
 	}
-	return mapUser(fetchedUser)
+	return model.NewAccount(fetchedUser), nil
 }
 
-func (s *user) RemoveLabel(userId, label string) (*model.User, error) {
-	userDB := appwrite.NewUsers(*utils.NewAdminClient(s.apiKey, utils.WithEndpoint(s.endpoint), utils.WithProject(s.project), utils.WithEndpoint(s.endpoint)))
-	fetchedUser, err := userDB.Get(userId)
+func (s *user) RemoveLabel(userId, label string) (*model.Account, error) {
+	database := appwrite.NewUsers(*utils.NewAdminClient(s.apiKey, utils.WithEndpoint(s.endpoint), utils.WithProject(s.project), utils.WithEndpoint(s.endpoint)))
+	fetchedUser, err := database.Get(userId)
 	if err != nil {
 		return nil, fmt.Errorf("GetUser error for userId '%s': %v", userId, err)
 	}
 	fetchedUser.Labels = utils.Filter(fetchedUser.Labels, func(l string) bool {
 		return l != label
 	})
-	user, err := userDB.UpdateLabels(userId, fetchedUser.Labels)
+	userAccount, err := database.UpdateLabels(userId, fetchedUser.Labels)
 	if err != nil {
 		return nil, fmt.Errorf("RemoveLabel error for userId '%s': %v", userId, err)
 	}
-	return mapUser(user)
+	return model.NewAccount(userAccount), nil
 }

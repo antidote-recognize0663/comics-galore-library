@@ -11,7 +11,7 @@ import (
 
 type Admin interface {
 	SignIn(email, password string) (*model.Session, error)
-	GetUser(userId string) (*model.User, error)
+	GetUser(userId string) (*model.Account, error)
 	SignUp(username, email, password string) (*model.Account, error)
 	PasswordReset(email string, recoveryUrl string) (*model.Token, error)
 	UpdateVerification(secret, userId string) (*model.Token, error)
@@ -61,7 +61,7 @@ func (s *admin) SignIn(email, password string) (*model.Session, error) {
 	return &model.Session{Session: session}, nil
 }
 
-func (s *admin) GetUser(userId string) (*model.User, error) {
+func (s *admin) GetUser(userId string) (*model.Account, error) {
 	if userId == "" {
 		return nil, fmt.Errorf("userId cannot be empty")
 	}
@@ -70,8 +70,7 @@ func (s *admin) GetUser(userId string) (*model.User, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user %s: %w", userId, err)
 	}
-	//TODO: Don't forget to map Preferences
-	return &model.User{User: user}, nil
+	return model.NewAccount(user), nil
 }
 
 func (s *admin) SignUp(username, email, password string) (*model.Account, error) {
