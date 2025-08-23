@@ -5,7 +5,7 @@ import (
 	"github.com/antidote-recognize0663/comics-galore-library/config"
 	"github.com/antidote-recognize0663/comics-galore-library/model"
 	"github.com/antidote-recognize0663/comics-galore-library/utils"
-	"github.com/appwrite/sdk-for-go/account"
+	"github.com/appwrite/sdk-for-go/appwrite"
 	"resty.dev/v3"
 )
 
@@ -21,16 +21,43 @@ type Session interface {
 }
 
 type session struct {
-	config *config.AppwriteConfig
+	endpoint  string
+	projectID string
+}
+
+type Config struct {
+	apiKey    string
+	endpoint  string
+	projectID string
+}
+
+type Option func(*Config)
+
+func WithEndpoint(endpoint string) Option {
+	return func(c *Config) {
+		c.endpoint = endpoint
+	}
+}
+
+func WithProject(projectID string) Option {
+	return func(c *Config) {
+		c.projectID = projectID
+	}
+}
+
+func WithAPIKey(apiKey string) Option {
+	return func(c *Config) {
+		c.apiKey = apiKey
+	}
 }
 
 func (s *session) UpdateName(secret, name string) (*model.Account, error) {
 	if secret == "" {
 		return nil, fmt.Errorf("secret cannot be empty")
 	}
-	accountDB := account.New(*utils.NewSessionClient(
-		secret, utils.WithEndpoint(s.config.Endpoint), utils.WithProject(s.config.ProjectID)))
-	user, err := accountDB.UpdateName(name)
+	account := appwrite.NewAccount(*utils.NewSessionClient(
+		secret, utils.WithEndpoint(s.endpoint), utils.WithProject(s.projectID)))
+	user, err := account.UpdateName(name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update username %w", err)
 	}
@@ -41,9 +68,9 @@ func (s *session) UpdateEmail(secret, email, password string) (*model.Account, e
 	if secret == "" {
 		return nil, fmt.Errorf("secret cannot be empty")
 	}
-	accountDB := account.New(*utils.NewSessionClient(
-		secret, utils.WithEndpoint(s.config.Endpoint), utils.WithProject(s.config.ProjectID)))
-	user, err := accountDB.UpdateEmail(email, password)
+	account := appwrite.NewAccount(*utils.NewSessionClient(
+		secret, utils.WithEndpoint(s.endpoint), utils.WithProject(s.projectID)))
+	user, err := account.UpdateEmail(email, password)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update email %w", err)
 	}
@@ -54,18 +81,33 @@ func (s *session) UpdatePassword(secret, oldPassword, newPassword string) (*mode
 	if secret == "" {
 		return nil, fmt.Errorf("secret cannot be empty")
 	}
-	accountDB := account.New(*utils.NewSessionClient(
-		secret, utils.WithEndpoint(s.config.Endpoint), utils.WithProject(s.config.ProjectID)))
-	user, err := accountDB.UpdatePassword(newPassword, accountDB.WithUpdatePasswordOldPassword(oldPassword))
+	account := appwrite.NewAccount(*utils.NewSessionClient(
+		secret, utils.WithEndpoint(s.endpoint), utils.WithProject(s.projectID)))
+	user, err := account.UpdatePassword(newPassword, account.WithUpdatePasswordOldPassword(oldPassword))
 	if err != nil {
 		return nil, fmt.Errorf("failed to update password %w", err)
 	}
 	return model.NewAccount(user), nil
 }
 
-func NewSession(config *config.AppwriteConfig) Session {
+func NewSessionWithConfig(config *config.Config) Session {
 	return &session{
-		config: config,
+		endpoint:  config.Appwrite.Endpoint,
+		projectID: config.Appwrite.ProjectID,
+	}
+}
+
+func NewSession(options ...Option) Session {
+	_config := &Config{
+		endpoint:  "https://fra.cloud.appwrite.io/v1",
+		projectID: "6510a59f633f9d57fba2",
+	}
+	for _, option := range options {
+		option(_config)
+	}
+	return &session{
+		endpoint:  _config.endpoint,
+		projectID: _config.projectID,
 	}
 }
 
@@ -73,10 +115,10 @@ func (s *session) DeleteCurrentSession(secret string) error {
 	if secret == "" {
 		return fmt.Errorf("secret cannot be empty")
 	}
-	accountDB := account.New(*utils.NewSessionClient(
-		secret, utils.WithEndpoint(s.config.Endpoint), utils.WithProject(s.config.ProjectID)))
+	account := appwrite.NewAccount(*utils.NewSessionClient(
+		secret, utils.WithEndpoint(s.endpoint), utils.WithProject(s.projectID)))
 
-	_, err := accountDB.DeleteSession("current")
+	_, err := account.DeleteSession("current")
 	if err != nil {
 		return fmt.Errorf("failed to delete session: %w", err)
 	}
@@ -89,10 +131,10 @@ func (s *session) GetAccount(secret string) (*model.User, error) {
 		resp, err := client.R().
 			SetHeader("Content-Type", "application/json").
 			SetHeader("X-Appwrite-Session", secret).
-			SetHeader("X-Appwrite-Project", s.config.ProjectID).
+			SetHeader("X-Appwrite-Project", s.projectID).
 			SetHeader("X-Appwrite-Response-Format", "1.6.0").
 			SetResult(&model.User{}).
-			Get(s.config.Endpoint + "/account")
+			Get(s.endpoint + "/account")
 		if err != nil {
 			return nil, fmt.Errorf("failed to retrieve account information: %w", err)
 		}
@@ -108,11 +150,11 @@ func (s *session) UpdatePreferences(secret string, prefs *model.Preferences) (*m
 	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("X-Appwrite-Session", secret).
-		SetHeader("X-Appwrite-Project", s.config.ProjectID).
+		SetHeader("X-Appwrite-Project", s.projectID).
 		SetHeader("X-Appwrite-Response-Format", "1.6.0").
 		SetBody(request).
 		SetResult(&model.User{}).
-		Patch(s.config.Endpoint + "/account/prefs")
+		Patch(s.endpoint + "/account/prefs")
 	if err != nil {
 		return nil, fmt.Errorf("failed to update preferences: %w", err)
 	}
@@ -124,9 +166,9 @@ func (s *session) CreateVerification(secret string, verificationUrl string) (*mo
 	if secret == "" {
 		return nil, fmt.Errorf("secret cannot be empty")
 	}
-	accountDB := account.New(*utils.NewSessionClient(
-		secret, utils.WithEndpoint(s.config.Endpoint), utils.WithProject(s.config.ProjectID)))
-	token, err := accountDB.CreateVerification(verificationUrl)
+	account := appwrite.NewAccount(*utils.NewSessionClient(
+		secret, utils.WithEndpoint(s.endpoint), utils.WithProject(s.projectID)))
+	token, err := account.CreateVerification(verificationUrl)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create verification link: %w", err)
 	}
@@ -134,9 +176,9 @@ func (s *session) CreateVerification(secret string, verificationUrl string) (*mo
 }
 
 func (s *session) VerifyAccount(secret, userId string) (*model.Token, error) {
-	accountDB := account.New(*utils.NewSessionClient(
-		secret, utils.WithEndpoint(s.config.Endpoint), utils.WithProject(s.config.ProjectID)))
-	token, err := accountDB.UpdateVerification(userId, secret)
+	account := appwrite.NewAccount(*utils.NewSessionClient(
+		secret, utils.WithEndpoint(s.endpoint), utils.WithProject(s.projectID)))
+	token, err := account.UpdateVerification(userId, secret)
 	if err != nil {
 		return nil, fmt.Errorf("failed to verify account %s: %w", userId, err)
 	}

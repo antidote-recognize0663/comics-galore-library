@@ -13,42 +13,66 @@ import (
 	"time"
 )
 
-type Images interface {
+type Image interface {
 	UploadFromReader(reader io.Reader, filename string, metadata map[string]string, requireSignedUrls bool) (*model.CloudflareImageResponse, error)
 	UploadFromURL(url string, metadata map[string]string, requireSignedUrls bool) (*model.CloudflareImageResponse, error)
 	ListImages(page, perPage int) (*model.CloudflareListImagesResponse, error)
 }
 
-type images struct {
+type image struct {
 	client   *resty.Client
 	apiKey   string
 	imageUrl string
 }
 
-func NewImages(config config.CloudflareImagesConfig) Images {
+func NewImageWithConfig(config config.Config) Image {
 	client := resty.New()
 	client.SetTimeout(1 * time.Minute)
-	return &images{
+	return &image{
 		client:   client,
-		apiKey:   config.ApiKey,
-		imageUrl: config.ImagesURL,
+		apiKey:   config.CloudflareImages.ApiKey,
+		imageUrl: config.CloudflareImages.ImagesURL,
 	}
 }
 
-func (s *images) UploadFromReader(reader io.Reader, fileName string, metadata map[string]string, requireSignedURLs bool) (*model.CloudflareImageResponse, error) {
+func NewImage(opts ...Option) Image {
+	_config := &Config{
+		imagesURL: "https://api.cloudflare.com/client/v4/accounts/b879240179ed3d643bf783745c93b100/images/v1",
+	}
+	for _, opt := range opts {
+		opt(_config)
+	}
+	client := resty.New()
+	client.SetTimeout(1 * time.Minute)
+	return &image{
+		client:   client,
+		apiKey:   _config.apiKey,
+		imageUrl: _config.imagesURL,
+	}
+}
 
+func WithApiKey(apiKey string) Option {
+	return func(config *Config) {
+		config.apiKey = apiKey
+	}
+}
+
+func WithImagesURL(imagesURL string) Option {
+	return func(config *Config) {
+		config.imagesURL = imagesURL
+	}
+}
+
+func (s *image) UploadFromReader(reader io.Reader, fileName string, metadata map[string]string, requireSignedURLs bool) (*model.CloudflareImageResponse, error) {
 	if reader == nil {
 		return nil, fmt.Errorf("reader is nil")
 	}
-
 	metadataBytes, err := json.Marshal(metadata)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal metadata to JSON: %w", err)
 	}
-
-	var cfResponse model.CloudflareImageResponse
-	var cfErrorResponse model.CloudflareImageResponse
-
+	var response model.CloudflareImageResponse
+	var errorResponse model.CloudflareImageResponse
 	resp, err := s.client.R().
 		SetAuthToken(s.apiKey).
 		SetHeader("Accept", "application/json").
@@ -69,32 +93,27 @@ func (s *images) UploadFromReader(reader io.Reader, fileName string, metadata ma
 				Values: []string{strconv.FormatBool(requireSignedURLs)},
 			},
 		).
-		SetResult(&cfResponse).
-		SetError(&cfErrorResponse).
+		SetResult(&response).
+		SetError(&errorResponse).
 		Post(s.imageUrl)
-
 	if err != nil {
 		return nil, fmt.Errorf("request failed: %w", err)
 	}
-
 	if resp.IsError() {
 		log.Printf("Cloudflare API Error Response Body: %s", resp.String())
-		return &cfErrorResponse, fmt.Errorf("cloudflare API returned an error: status %d", resp.StatusCode())
+		return &errorResponse, fmt.Errorf("cloudflare API returned an error: status %d", resp.StatusCode())
 	}
-
-	return &cfResponse, nil
+	return &response, nil
 }
 
 // UploadFromURL uploads an image from a public URL.
-func (s *images) UploadFromURL(imageURL string, metadata map[string]string, requireSignedURLs bool) (*model.CloudflareImageResponse, error) {
+func (s *image) UploadFromURL(imageURL string, metadata map[string]string, requireSignedURLs bool) (*model.CloudflareImageResponse, error) {
 	metadataBytes, err := json.Marshal(metadata)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal metadata to JSON: %w", err)
 	}
-
-	var cfResponse model.CloudflareImageResponse
-	var cfErrorResponse model.CloudflareImageResponse
-
+	var response model.CloudflareImageResponse
+	var errorResponse model.CloudflareImageResponse
 	resp, err := s.client.R().
 		SetAuthToken(s.apiKey).
 		SetHeader("Accept", "application/json").
@@ -103,52 +122,46 @@ func (s *images) UploadFromURL(imageURL string, metadata map[string]string, requ
 			"metadata":          string(metadataBytes),
 			"requireSignedURLs": strconv.FormatBool(requireSignedURLs),
 		}).
-		SetResult(&cfResponse).
-		SetError(&cfErrorResponse).
+		SetResult(&response).
+		SetError(&errorResponse).
 		Post(s.imageUrl)
 
 	if err != nil {
 		return nil, fmt.Errorf("request failed: %w", err)
 	}
-
 	if resp.IsError() {
-		return &cfErrorResponse, fmt.Errorf("cloudflare API returned an error: status %d", resp.StatusCode())
+		return &errorResponse, fmt.Errorf("cloudflare API returned an error: status %d", resp.StatusCode())
 	}
-
-	return &cfResponse, nil
+	return &response, nil
 }
 
-func (s *images) ListImages(page, perPage int) (*model.CloudflareListImagesResponse, error) {
-	var cfResponse model.CloudflareListImagesResponse
-
+func (s *image) ListImages(page, perPage int) (*model.CloudflareListImagesResponse, error) {
+	var response model.CloudflareListImagesResponse
 	resp, err := s.client.R().
 		SetQueryParams(map[string]string{
 			"page":     fmt.Sprintf("%d", page),
 			"per_page": fmt.Sprintf("%d", perPage),
 		}).
-		SetResult(&cfResponse).
-		SetError(&cfResponse).
+		SetResult(&response).
+		SetError(&response).
 		Get(s.imageUrl)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute request to fetch images: %w", err)
+		return nil, fmt.Errorf("failed to execute request to fetch image: %w", err)
 	}
-
 	if resp.IsError() {
-		errMsg := fmt.Sprintf("Cloudflare API returned an error (status %d)", resp.StatusCode())
-		if len(cfResponse.Errors) > 0 {
-			errMsg = fmt.Sprintf("%s: %s", errMsg, cfResponse.Errors[0].Message)
+		errorMessage := fmt.Sprintf("Cloudflare API returned an error (status %d)", resp.StatusCode())
+		if len(response.Errors) > 0 {
+			errorMessage = fmt.Sprintf("%s: %s", errorMessage, response.Errors[0].Message)
 		}
-		return nil, errors.New(errMsg)
+		return nil, errors.New(errorMessage)
 	}
-
-	return &cfResponse, nil
+	return &response, nil
 }
 
 type Config struct {
-	endpoint  string
-	projectID string
-	bucketID  string
+	apiKey    string
+	imagesURL string
 }
 
 type Option func(*Config)

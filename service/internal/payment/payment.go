@@ -2,20 +2,21 @@ package payment
 
 import (
 	"fmt"
+	"github.com/antidote-recognize0663/comics-galore-library/config"
 	"github.com/antidote-recognize0663/comics-galore-library/model"
 	"github.com/antidote-recognize0663/comics-galore-library/utils"
 	"github.com/appwrite/sdk-for-go/databases"
 	"github.com/appwrite/sdk-for-go/query"
 )
 
-type Service interface {
+type Payment interface {
 	WithQueryOrderBy(field string, ascending bool) func([]string) []string
 	WithQueryStatusNotEqual(status string) func([]string) []string
 	GetList(secret string, limit int, offset int, opts ...func([]string) []string) (*model.PaymentList, error)
 	Update(documentId string, notification map[string]interface{}) (*model.Payment, error)
 }
 
-type service struct {
+type payment struct {
 	apiKey       string
 	endpoint     string
 	projectID    string
@@ -23,7 +24,7 @@ type service struct {
 	collectionID string
 }
 
-func (p *service) WithQueryStatusNotEqual(status string) func([]string) []string {
+func (p *payment) WithQueryStatusNotEqual(status string) func([]string) []string {
 	return func(queries []string) []string {
 		if status != "" {
 			queries = append(queries, query.NotEqual("payment_status", status))
@@ -32,7 +33,7 @@ func (p *service) WithQueryStatusNotEqual(status string) func([]string) []string
 	}
 }
 
-func (p *service) GetList(secret string, limit int, offset int, opts ...func([]string) []string) (*model.PaymentList, error) {
+func (p *payment) GetList(secret string, limit int, offset int, opts ...func([]string) []string) (*model.PaymentList, error) {
 	sessionClient := utils.NewSessionClient(secret, utils.WithProject(p.projectID), utils.WithEndpoint(p.endpoint))
 	database := databases.New(*sessionClient)
 	queries := []string{
@@ -57,7 +58,7 @@ func (p *service) GetList(secret string, limit int, offset int, opts ...func([]s
 	return &paymentList, nil
 }
 
-func (p *service) Update(documentID string, notification map[string]interface{}) (*model.Payment, error) {
+func (p *payment) Update(documentID string, notification map[string]interface{}) (*model.Payment, error) {
 	if documentID == "" {
 		return nil, fmt.Errorf("documentID is required to update payment")
 	}
@@ -78,22 +79,30 @@ func (p *service) Update(documentID string, notification map[string]interface{})
 	return &payment, nil
 }
 
-func NewService(opts ...Option) Service {
-	config := &Config{
+func NewPayment(opts ...Option) Payment {
+	cfg := &Config{
 		endpoint:     "https://comics-galore.co/v1",
 		projectID:    "6510a59f633f9d57fba2",
 		databaseID:   "6510add9771bcf260b40",
 		collectionID: "67806dd1003557f3794e",
 	}
 	for _, opt := range opts {
-		opt(config)
+		opt(cfg)
 	}
-	return &service{
-		apiKey:       config.apiKey,
-		endpoint:     config.endpoint,
-		projectID:    config.projectID,
-		databaseID:   config.databaseID,
-		collectionID: config.collectionID,
+	return &payment{
+		apiKey:       cfg.apiKey,
+		endpoint:     cfg.endpoint,
+		projectID:    cfg.projectID,
+		databaseID:   cfg.databaseID,
+		collectionID: cfg.collectionID,
+	}
+}
+
+func NewPaymentWithConfig(cfg *config.Config) Payment {
+	return &payment{
+		apiKey:    cfg.Appwrite.ApiKey,
+		endpoint:  cfg.Appwrite.Endpoint,
+		projectID: cfg.Appwrite.ProjectID,
 	}
 }
 
@@ -127,7 +136,7 @@ func WithDatabaseID(databaseID string) Option {
 	}
 }
 
-func (p *service) WithQueryOrderBy(field string, ascending bool) func([]string) []string {
+func (p *payment) WithQueryOrderBy(field string, ascending bool) func([]string) []string {
 	return func(queries []string) []string {
 		if field != "" {
 			if ascending {

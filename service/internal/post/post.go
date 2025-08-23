@@ -2,6 +2,7 @@ package post
 
 import (
 	"fmt"
+	"github.com/antidote-recognize0663/comics-galore-library/config"
 	"github.com/antidote-recognize0663/comics-galore-library/model"
 	"github.com/antidote-recognize0663/comics-galore-library/utils"
 	"github.com/appwrite/sdk-for-go/appwrite"
@@ -147,21 +148,30 @@ func (p post) Delete(secret, documentId string) error {
 	return nil
 }
 
+func NewPostWithConfig(config *config.Config) Post {
+	return &post{
+		endpoint:     config.Appwrite.Endpoint,
+		projectID:    config.Appwrite.ProjectID,
+		databaseID:   config.Appwrite.DatabaseID,
+		collectionID: config.Appwrite.CollectionIDBlogposts,
+	}
+}
+
 func NewPost(opts ...Option) Post {
-	config := &Config{
+	_config := &Config{
 		endpoint:     "https://fra.cloud.appwrite.io/v1",
 		projectID:    "6510a59f633f9d57fba2",
 		databaseID:   "6510add9771bcf260b40",
 		collectionID: "6510ae2ee8b7da6d715d",
 	}
 	for _, opt := range opts {
-		opt(config)
+		opt(_config)
 	}
 	return &post{
-		endpoint:     config.endpoint,
-		projectID:    config.projectID,
-		databaseID:   config.databaseID,
-		collectionID: config.collectionID,
+		endpoint:     _config.endpoint,
+		projectID:    _config.projectID,
+		databaseID:   _config.databaseID,
+		collectionID: _config.collectionID,
 	}
 }
 

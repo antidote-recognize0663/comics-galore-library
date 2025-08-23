@@ -1,73 +1,92 @@
-package services
+package statistic
 
 import (
 	"fmt"
+	"github.com/antidote-recognize0663/comics-galore-library/config"
+	"github.com/antidote-recognize0663/comics-galore-library/utils"
+	"github.com/appwrite/sdk-for-go/appwrite"
 	"github.com/appwrite/sdk-for-go/client"
-	"github.com/appwrite/sdk-for-go/databases"
 	"github.com/appwrite/sdk-for-go/query"
 )
 
-type StatisticService interface {
-	WithDocumentID(documentID string) StatisticOption
-	WithDatabaseID(databaseID string) StatisticOption
-	WithCollectionID(collectionID string) StatisticOption
+type Counter interface {
 	Increment(attributeName string) (int64, error)
 	Decrement(attributeName string) (int64, error)
 	GetValue(attributeName string) (int64, error)
 }
 
-type statisticService struct {
+type counter struct {
 	databaseID   string
 	documentID   string
 	collectionID string
 	client       *client.Client
 }
 
-type StatisticConfig struct {
+type Config struct {
+	apiKey       string
+	endpoint     string
+	projectID    string
 	documentID   string
 	databaseID   string
 	collectionID string
 }
 
-type StatisticOption func(*StatisticConfig)
+type Option func(*Config)
 
-func (s *statisticService) WithDocumentID(documentID string) StatisticOption {
-	return func(config *StatisticConfig) {
+func WithDocumentID(documentID string) Option {
+	return func(config *Config) {
 		config.documentID = documentID
 	}
 }
 
-func (s *statisticService) WithCollectionID(collectionID string) StatisticOption {
-	return func(config *StatisticConfig) {
+func WithCollectionID(collectionID string) Option {
+	return func(config *Config) {
 		config.collectionID = collectionID
 	}
 }
 
-func (s *statisticService) WithDatabaseID(databaseID string) StatisticOption {
-	return func(config *StatisticConfig) {
+func WithDatabaseID(databaseID string) Option {
+	return func(config *Config) {
 		config.databaseID = databaseID
 	}
 }
 
-func NewStatisticService(client *client.Client, opts ...StatisticOption) StatisticService {
-	config := &StatisticConfig{
+func WithApiKey(apiKey string) Option {
+	return func(config *Config) {
+		config.apiKey = apiKey
+	}
+}
+
+func NewCounter(opts ...Option) Counter {
+	cfg := &Config{
+		endpoint:     "https://fra.cloud.appwrite.io/v1",
+		projectID:    "6510a59f633f9d57fba2",
 		databaseID:   "6510add9771bcf260b40",
 		documentID:   "689e4a4a0015fd649ac1",
 		collectionID: "689d116400217e4cd917",
 	}
 	for _, opt := range opts {
-		opt(config)
+		opt(cfg)
 	}
-	return &statisticService{
-		client:       client,
-		databaseID:   config.databaseID,
-		documentID:   config.documentID,
-		collectionID: config.collectionID,
+	return &counter{
+		databaseID:   cfg.databaseID,
+		documentID:   cfg.documentID,
+		collectionID: cfg.collectionID,
+		client:       utils.NewAdminClient(cfg.apiKey, utils.WithEndpoint(cfg.endpoint), utils.WithProject(cfg.projectID)),
 	}
 }
 
-func (s *statisticService) Increment(attributeName string) (int64, error) {
-	db := databases.New(*s.client)
+func NewCounterWithConfig(cfg *config.Config) Counter {
+	return &counter{
+		databaseID:   cfg.Appwrite.DatabaseID,
+		documentID:   cfg.Appwrite.CounterDocumentID,
+		collectionID: cfg.Appwrite.CollectionIDStatistics,
+		client:       utils.NewAdminClient(cfg.Appwrite.ApiKey, utils.WithEndpoint(cfg.Appwrite.Endpoint), utils.WithProject(cfg.Appwrite.ProjectID)),
+	}
+}
+
+func (s *counter) Increment(attributeName string) (int64, error) {
+	db := appwrite.NewDatabases(*s.client)
 	db.WithGetDocumentQueries([]string{query.Select([]string{attributeName})})
 	document, err := db.IncrementDocumentAttribute(
 		s.databaseID,
@@ -89,8 +108,8 @@ func (s *statisticService) Increment(attributeName string) (int64, error) {
 	return int64(newValue), nil
 }
 
-func (s *statisticService) Decrement(attributeName string) (int64, error) {
-	db := databases.New(*s.client)
+func (s *counter) Decrement(attributeName string) (int64, error) {
+	db := appwrite.NewDatabases(*s.client)
 	db.WithGetDocumentQueries([]string{query.Select([]string{attributeName})})
 	document, err := db.DecrementDocumentAttribute(
 		s.databaseID,
@@ -112,8 +131,8 @@ func (s *statisticService) Decrement(attributeName string) (int64, error) {
 	return int64(newValue), nil
 }
 
-func (s *statisticService) GetValue(attributeName string) (int64, error) {
-	db := databases.New(*s.client)
+func (s *counter) GetValue(attributeName string) (int64, error) {
+	db := appwrite.NewDatabases(*s.client)
 	db.WithGetDocumentQueries([]string{query.Select([]string{attributeName})})
 	document, err := db.GetDocument(
 		s.databaseID,

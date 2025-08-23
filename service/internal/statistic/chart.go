@@ -2,6 +2,7 @@ package statistic
 
 import (
 	"fmt"
+	"github.com/antidote-recognize0663/comics-galore-library/config"
 	"github.com/antidote-recognize0663/comics-galore-library/model"
 	"github.com/antidote-recognize0663/comics-galore-library/utils"
 	"github.com/appwrite/sdk-for-go/appwrite"
@@ -24,21 +25,29 @@ type chart struct {
 }
 
 func NewChart(opts ...Option) Chart {
-	config := &Config{
+	cfg := &Config{
 		endpoint:     "https://fra.cloud.appwrite.io/v1",
 		projectID:    "6510a59f633f9d57fba2",
 		databaseID:   "6510add9771bcf260b40",
 		collectionID: "",
 	}
 	for _, opt := range opts {
-		opt(config)
+		opt(cfg)
 	}
 	return &chart{
-		endpoint:     config.endpoint,
-		projectID:    config.projectID,
-		databaseID:   config.databaseID,
-		collectionID: config.collectionID,
-		client:       utils.NewAdminClient(config.apiKey, utils.WithEndpoint(config.endpoint), utils.WithProject(config.projectID)),
+		endpoint:     cfg.endpoint,
+		projectID:    cfg.projectID,
+		databaseID:   cfg.databaseID,
+		collectionID: cfg.collectionID,
+		client:       utils.NewAdminClient(cfg.apiKey, utils.WithEndpoint(cfg.endpoint), utils.WithProject(cfg.projectID)),
+	}
+}
+
+func NewChartWithConfig(cfg *config.Config) Chart {
+	return &chart{
+		endpoint:   cfg.Appwrite.Endpoint,
+		projectID:  cfg.Appwrite.ProjectID,
+		databaseID: cfg.Appwrite.DatabaseID,
 	}
 }
 

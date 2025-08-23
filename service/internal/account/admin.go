@@ -2,11 +2,11 @@ package account
 
 import (
 	"fmt"
+	"github.com/antidote-recognize0663/comics-galore-library/config"
 	"github.com/antidote-recognize0663/comics-galore-library/model"
-	"github.com/appwrite/sdk-for-go/account"
-	"github.com/appwrite/sdk-for-go/client"
+	"github.com/antidote-recognize0663/comics-galore-library/utils"
+	"github.com/appwrite/sdk-for-go/appwrite"
 	"github.com/appwrite/sdk-for-go/id"
-	"github.com/appwrite/sdk-for-go/users"
 )
 
 type Admin interface {
@@ -18,12 +18,31 @@ type Admin interface {
 }
 
 type admin struct {
-	client *client.Client
+	apiKey    string
+	endpoint  string
+	projectID string
 }
 
-func NewAdmin(client *client.Client) Admin {
+func NewAdminWithConfig(config *config.Config) Admin {
 	return &admin{
-		client: client,
+		apiKey:    config.Appwrite.ApiKey,
+		endpoint:  config.Appwrite.Endpoint,
+		projectID: config.Appwrite.ProjectID,
+	}
+}
+
+func NewAdmin(options ...Option) Admin {
+	_config := &Config{
+		endpoint:  "https://fra.cloud.appwrite.io/v1",
+		projectID: "6510a59f633f9d57fba2",
+	}
+	for _, option := range options {
+		option(_config)
+	}
+	return &admin{
+		apiKey:    _config.apiKey,
+		endpoint:  _config.endpoint,
+		projectID: _config.projectID,
 	}
 }
 
@@ -34,8 +53,8 @@ func (s *admin) SignIn(email, password string) (*model.Session, error) {
 	if password == "" {
 		return nil, fmt.Errorf("password cannot be empty")
 	}
-	accountDB := account.New(*s.client)
-	session, err := accountDB.CreateEmailPasswordSession(email, password)
+	account := appwrite.NewAccount(*utils.NewAdminClient(s.apiKey, utils.WithProject(s.projectID), utils.WithEndpoint(s.endpoint)))
+	session, err := account.CreateEmailPasswordSession(email, password)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create session: %w", err)
 	}
@@ -46,8 +65,8 @@ func (s *admin) GetUser(userId string) (*model.User, error) {
 	if userId == "" {
 		return nil, fmt.Errorf("userId cannot be empty")
 	}
-	usersDB := users.New(*s.client)
-	user, err := usersDB.Get(userId)
+	users := appwrite.NewUsers(*utils.NewAdminClient(s.apiKey, utils.WithProject(s.projectID), utils.WithEndpoint(s.endpoint)))
+	user, err := users.Get(userId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user %s: %w", userId, err)
 	}
@@ -65,12 +84,12 @@ func (s *admin) SignUp(username, email, password string) (*model.Account, error)
 	if password == "" {
 		return nil, fmt.Errorf("password cannot be empty")
 	}
-	usersDB := users.New(*s.client)
-	user, err := usersDB.Create(
+	users := appwrite.NewUsers(*utils.NewAdminClient(s.apiKey, utils.WithProject(s.projectID), utils.WithEndpoint(s.endpoint)))
+	user, err := users.Create(
 		id.Unique(),
-		usersDB.WithCreateEmail(email),
-		usersDB.WithCreatePassword(password),
-		usersDB.WithCreateName(username))
+		users.WithCreateEmail(email),
+		users.WithCreatePassword(password),
+		users.WithCreateName(username))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
@@ -84,8 +103,8 @@ func (s *admin) PasswordReset(email string, recoveryUrl string) (*model.Token, e
 	if recoveryUrl == "" {
 		return nil, fmt.Errorf("recoveryUrl cannot be empty")
 	}
-	accountDB := account.New(*s.client)
-	token, err := accountDB.CreateRecovery(email, recoveryUrl)
+	account := appwrite.NewAccount(*utils.NewAdminClient(s.apiKey, utils.WithProject(s.projectID), utils.WithEndpoint(s.endpoint)))
+	token, err := account.CreateRecovery(email, recoveryUrl)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create password recovery: %w", err)
 	}
@@ -99,8 +118,8 @@ func (s *admin) UpdateVerification(secret, userId string) (*model.Token, error) 
 	if userId == "" {
 		return nil, fmt.Errorf("userId cannot be empty")
 	}
-	accountDB := account.New(*s.client)
-	token, err := accountDB.UpdateVerification(userId, secret)
+	account := appwrite.NewAccount(*utils.NewAdminClient(s.apiKey, utils.WithProject(s.projectID), utils.WithEndpoint(s.endpoint)))
+	token, err := account.UpdateVerification(userId, secret)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update verification: %w", err)
 	}

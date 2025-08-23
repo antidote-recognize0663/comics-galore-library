@@ -2,12 +2,13 @@ package nowpayments
 
 import (
 	"fmt"
+	"github.com/antidote-recognize0663/comics-galore-library/config"
 	"github.com/antidote-recognize0663/comics-galore-library/model"
 	"resty.dev/v3"
 	"time"
 )
 
-type Api interface {
+type NowPayments interface {
 	GetAvailableCurrencies() (*model.CurrenciesResponse, error)
 	GetMerchantCoins() (*model.MerchantCoins, error)
 	GetApiStatus() (*model.StatusResponse, error)
@@ -16,32 +17,39 @@ type Api interface {
 	GetPaymentStatus(paymentID string) (*model.NowPaymentsIPN, error)
 }
 
-type api struct {
+type nowPayments struct {
 	apiKey            string
 	endpoint          string
 	subscriptionPlans []model.SubscriptionPlan
 }
 
-func NewApi(opts ...Option) Api {
-	config := &Config{
-		apiKey:            "",
+func NewNowPaymentsWithConfig(cfg *config.Config) NowPayments {
+	return &nowPayments{
+		apiKey:            cfg.Appwrite.ApiKey,
+		endpoint:          cfg.Appwrite.Endpoint,
+		subscriptionPlans: *cfg.Application.SubscriptionPlans,
+	}
+}
+
+func NewNowPayments(opts ...Option) NowPayments {
+	cfg := &Config{
 		endpoint:          "https://api.nowpayments.io/v1",
 		subscriptionPlans: *model.NewSubscriptionPlans(),
 	}
 	for _, opt := range opts {
-		opt(config)
+		opt(cfg)
 	}
-	return &api{
-		apiKey:            config.apiKey,
-		endpoint:          config.endpoint,
-		subscriptionPlans: config.subscriptionPlans,
+	return &nowPayments{
+		apiKey:            cfg.apiKey,
+		endpoint:          cfg.endpoint,
+		subscriptionPlans: cfg.subscriptionPlans,
 	}
 }
 
-func (n *api) GetAvailableCurrencies() (*model.CurrenciesResponse, error) {
+func (n *nowPayments) GetAvailableCurrencies() (*model.CurrenciesResponse, error) {
 	client := resty.New()
 	resp, err := client.R().
-		SetHeader("x-api-key", n.apiKey).
+		SetHeader("x-nowPayments-key", n.apiKey).
 		SetResult(&model.CurrenciesResponse{}).
 		Get(n.endpoint + "/currencies?fixed_rate=true")
 	if err != nil {
@@ -54,10 +62,10 @@ func (n *api) GetAvailableCurrencies() (*model.CurrenciesResponse, error) {
 	return currenciesResponse, nil
 }
 
-func (n *api) GetMerchantCoins() (*model.MerchantCoins, error) {
+func (n *nowPayments) GetMerchantCoins() (*model.MerchantCoins, error) {
 	client := resty.New()
 	resp, err := client.R().
-		SetHeader("x-api-key", n.apiKey).
+		SetHeader("x-nowPayments-key", n.apiKey).
 		SetResult(&model.MerchantCoins{}).
 		Get(n.endpoint + "/merchant/coins")
 	if err != nil {
@@ -70,7 +78,7 @@ func (n *api) GetMerchantCoins() (*model.MerchantCoins, error) {
 	return currenciesResponse, nil
 }
 
-func (n *api) GetApiStatus() (*model.StatusResponse, error) {
+func (n *nowPayments) GetApiStatus() (*model.StatusResponse, error) {
 	client := resty.New()
 	resp, err := client.R().SetResult(&model.StatusResponse{}).Get(n.endpoint + "/status")
 	if err != nil {
@@ -79,7 +87,7 @@ func (n *api) GetApiStatus() (*model.StatusResponse, error) {
 	return resp.Result().(*model.StatusResponse), nil
 }
 
-func (n *api) CreateNowPayment(priceIndex int, priceCurrency string, payAmount float64, baseUrl string) (*model.PaymentResponse, error) {
+func (n *nowPayments) CreateNowPayment(priceIndex int, priceCurrency string, payAmount float64, baseUrl string) (*model.PaymentResponse, error) {
 
 	description := n.subscriptionPlans[priceIndex].Name
 	priceAmount := n.subscriptionPlans[priceIndex].Price
@@ -90,7 +98,7 @@ func (n *api) CreateNowPayment(priceIndex int, priceCurrency string, payAmount f
 
 	client := resty.New()
 	resp, err := client.R().
-		SetHeader("x-api-key", n.apiKey).
+		SetHeader("x-nowPayments-key", n.apiKey).
 		SetHeader("Content-Type", "application/json").
 		SetBody(request).
 		SetResult(&model.PaymentResponse{}).
@@ -104,10 +112,10 @@ func (n *api) CreateNowPayment(priceIndex int, priceCurrency string, payAmount f
 	return resp.Result().(*model.PaymentResponse), nil
 }
 
-func (n *api) GetEstimatedPrice(amount float64, currencyFrom, currencyTo string) (*model.EstimatedPrice, error) {
+func (n *nowPayments) GetEstimatedPrice(amount float64, currencyFrom, currencyTo string) (*model.EstimatedPrice, error) {
 	client := resty.New()
 	resp, err := client.R().
-		SetHeader("x-api-key", n.apiKey).
+		SetHeader("x-nowPayments-key", n.apiKey).
 		SetQueryParams(map[string]string{
 			"amount":        fmt.Sprintf("%.4f", amount),
 			"currency_from": currencyFrom,
@@ -125,13 +133,13 @@ func (n *api) GetEstimatedPrice(amount float64, currencyFrom, currencyTo string)
 }
 
 // GetPaymentStatus fetches the payment status from the NowPayments API
-func (n *api) GetPaymentStatus(paymentID string) (*model.NowPaymentsIPN, error) {
+func (n *nowPayments) GetPaymentStatus(paymentID string) (*model.NowPaymentsIPN, error) {
 	if paymentID == "" {
 		return nil, fmt.Errorf("paymentID cannot be empty")
 	}
 	client := resty.New().SetTimeout(10 * time.Second)
 	resp, err := client.R().
-		SetHeader("x-api-key", n.apiKey).
+		SetHeader("x-nowPayments-key", n.apiKey).
 		SetResult(&model.NowPaymentsIPN{}).
 		Get(fmt.Sprintf("%s/payment/%s", n.endpoint, paymentID))
 	if err != nil {
