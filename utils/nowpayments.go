@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/antidote-recognize0663/comics-galore-library/model"
 	"sort"
 	"strings"
 )
@@ -42,8 +43,8 @@ func createCanonicalJSON(payload []byte) (string, error) {
 	return builder.String(), nil
 }
 
-func ValidatePayload(receivedHMAC string, receivedPayload []byte, ipnSecret string) (bool, string, *metrics.NowPaymentsIPN) {
-	var nowPaymentsIpn metrics.NowPaymentsIPN
+func ValidatePayload(receivedHMAC string, receivedPayload []byte, ipnSecret string) (bool, string, *model.NowPaymentsIPN) {
+	var nowPaymentsIpn model.NowPaymentsIPN
 	if err := json.Unmarshal(receivedPayload, &nowPaymentsIpn); err != nil {
 		return false, "Invalid JSON format", nil
 	}
