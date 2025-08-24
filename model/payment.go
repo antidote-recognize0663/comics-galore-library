@@ -1,6 +1,10 @@
 package model
 
-import "github.com/appwrite/sdk-for-go/models"
+import (
+	"github.com/antidote-recognize0663/comics-galore-library/utils"
+	"github.com/appwrite/sdk-for-go/models"
+	"time"
+)
 
 type PaymentStatus struct {
 	PaymentID       string            `json:"payment_id"`
@@ -18,28 +22,68 @@ type PaymentStatus struct {
 	OutcomeAmount   float64           `json:"outcome_amount"`
 }
 
-type PaymentList struct {
-	*models.DocumentList
-	Payments []Payment `json:"documents"`
-}
-
 type PaymentData struct {
-	UserId           string `json:"user_id"`
-	OrderId          string `json:"order_id"`
-	QrCodeUrl        string `json:"qr_code_url"`
-	PaymentId        string `json:"payment_id"`
-	PayAmount        string `json:"pay_amount"`
-	PayAddress       string `json:"pay_address"`
-	PayCurrency      string `json:"pay_currency"`
-	PriceAmount      string `json:"price_amount"`
-	PaymentStatus    string `json:"payment_status"`
-	PriceCurrency    string `json:"price_currency"`
-	OrderDescription string `json:"order_description"`
-	ExpirationDate   string `json:"expiration_date"`
-	Expired          bool   `json:"expired"`
+	UserID           string            `json:"user_id,omitempty"`
+	OrderID          string            `json:"order_id,omitempty"`
+	QRCodeURL        string            `json:"qr_code_url,omitempty"`
+	PaymentID        string            `json:"payment_id"`
+	PayAmount        float64           `json:"pay_amount"`
+	PayAddress       string            `json:"pay_address,omitempty"`
+	PayCurrency      string            `json:"pay_currency,omitempty"`
+	PriceAmount      float64           `json:"price_amount,omitempty"`
+	PriceCurrency    string            `json:"price_currency,omitempty"`
+	OrderDescription string            `json:"order_description,omitempty"`
+	Expired          bool              `json:"expired,omitempty"`
+	PaymentStatus    PaymentStatusEnum `json:"payment_status"`
+	ExpirationDate   string            `json:"expiration_date"`
+	ExpiresAt        string            `json:"expires_at,omitempty"`
+	PayinHash        string            `json:"payin_hash,omitempty"`
+	PayoutHash       string            `json:"payout_hash,omitempty"`
+	ActuallyPaid     float64           `json:"actually_paid,omitempty"`
 }
 
 type Payment struct {
 	*models.Document
 	*PaymentData
+}
+
+type PaymentList struct {
+	*models.DocumentList
+	Payments []Payment `json:"documents"`
+}
+
+func NewPaymentData(userId string, payment *PaymentResponse) (*PaymentData, error) {
+	durationMap := map[float64]Duration{
+		10:  {0, 1, 0}, // 1 month
+		20:  {0, 2, 0}, // 2 months
+		30:  {0, 3, 0}, // 3 months
+		60:  {0, 6, 0}, // 6 months
+		120: {1, 0, 0}, // 1 year
+	}
+	expiresAt, err := utils.GetExpirationDate(time.Now(), payment.PriceAmount, durationMap)
+	if err != nil {
+		return nil, err
+	}
+	//expiresAt := expiresAt.Format(time.RFC3339)
+	qrCodeURL := utils.BuildQRCodeURL(payment.PayCurrency, payment.PayAddress, payment.PriceAmount, payment.PaymentID)
+	return &PaymentData{
+		UserID:           userId,
+		OrderID:          payment.OrderID,
+		PaymentID:        payment.PaymentID,
+		PayAmount:        payment.PayAmount,
+		PayAddress:       payment.PayAddress,
+		PayCurrency:      payment.PayCurrency,
+		PriceAmount:      payment.PriceAmount,
+		PaymentStatus:    payment.PaymentStatus,
+		PriceCurrency:    payment.PriceCurrency,
+		OrderDescription: payment.OrderDescription,
+		QRCodeURL:        qrCodeURL,
+		ExpiresAt:        expiresAt,
+	}, nil
+}
+
+type Duration struct {
+	Years  int
+	Months int
+	Days   int
 }
