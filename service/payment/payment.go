@@ -12,7 +12,7 @@ import (
 type Payment interface {
 	WithQueryOrderBy(field string, ascending bool) func([]string) []string
 	WithQueryStatusNotEqual(status string) func([]string) []string
-	GetList(secret string, limit int, offset int, opts ...func([]string) []string) (*model.PaymentList, error)
+	GetList(secret, userID string, limit int, offset int, opts ...func([]string) []string) (*model.PaymentList, error)
 	Update(documentId string, notification map[string]interface{}) (*model.Payment, error)
 }
 
@@ -33,12 +33,14 @@ func (p *payment) WithQueryStatusNotEqual(status string) func([]string) []string
 	}
 }
 
-func (p *payment) GetList(secret string, limit int, offset int, opts ...func([]string) []string) (*model.PaymentList, error) {
+func (p *payment) GetList(secret, userID string, limit int, offset int, opts ...func([]string) []string) (*model.PaymentList, error) {
 	sessionClient := utils.NewSessionClient(secret, utils.WithProject(p.projectID), utils.WithEndpoint(p.endpoint))
 	database := databases.New(*sessionClient)
 	queries := []string{
 		query.Limit(limit),
 		query.Offset(offset),
+		query.Equal("user_id", userID),
+		query.OrderDesc("$updatedAt"),
 	}
 	for _, opt := range opts {
 		queries = opt(queries)
