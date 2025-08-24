@@ -81,6 +81,51 @@ func (p *payment) Update(documentID string, notification map[string]interface{})
 	return &payment, nil
 }
 
+func (p *payment) Create(data *model.PaymentData) (*model.Payment, error) {
+	documentId := data.OrderID
+	data.OrderID = ""
+	adminClient := utils.NewAdminClient(p.apiKey, utils.WithProject(p.projectID), utils.WithEndpoint(p.endpoint))
+	database := databases.New(*adminClient)
+	document, err := database.CreateDocument(
+		p.databaseID,
+		p.collectionID,
+		documentId,
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	var payment model.Payment
+	if err := document.Decode(&payment); err != nil {
+		return nil, fmt.Errorf("create decode error for documentID '%s': %v", documentId, err)
+	}
+	return &payment, nil
+}
+
+func (p *payment) GetById(documentId string) (*model.Payment, error) {
+	adminClient := utils.NewAdminClient(p.apiKey, utils.WithProject(p.projectID), utils.WithEndpoint(p.endpoint))
+	database := databases.New(*adminClient)
+	documents, err := database.GetDocument(p.databaseID, p.collectionID, documentId)
+	if err != nil {
+		return nil, fmt.Errorf("[PaymentDataService:GetById] Failed to get document with fileId '%s': %v", documentId, err)
+	}
+	var payment model.Payment
+	if err := documents.Decode(&payment); err != nil {
+		return nil, fmt.Errorf("[PaymentDataService:GetById] Failed to decode document with fileId '%s': %v", documentId, err)
+	}
+	return &payment, nil
+}
+
+func (p *payment) Delete(documentId string) error {
+	adminClient := utils.NewAdminClient(p.apiKey, utils.WithProject(p.projectID), utils.WithEndpoint(p.endpoint))
+	database := databases.New(*adminClient)
+	_, err := database.DeleteDocument(p.databaseID, p.collectionID, documentId)
+	if err != nil {
+		return fmt.Errorf("[PaymentDataService:Delete] Failed to delete document with fileId '%s': %v", documentId, err)
+	}
+	return nil
+}
+
 func NewPayment(opts ...Option) Payment {
 	cfg := &Config{
 		endpoint:     "https://comics-galore.co/v1",
