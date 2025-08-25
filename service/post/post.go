@@ -12,7 +12,7 @@ import (
 type Post interface {
 	GetByID(secret, documentId string) (*model.Post, error)
 	FetchList(secret string, queries []string) (*model.PostList, error)
-	Create(secret string, data map[string]interface{}, opts ...DocumentOption) (*model.Post, error)
+	Create(secret string, data model.CreatePost, opts ...DocumentOption) (*model.Post, error)
 	Update(secret, documentId string, data model.PostData) (*model.Post, error)
 	Delete(secret, documentId string) error
 }
@@ -79,7 +79,7 @@ func WithDocumentID(documentID string) DocumentOption {
 	}
 }
 
-func (p post) Create(secret string, data map[string]interface{}, opts ...DocumentOption) (*model.Post, error) {
+func (p post) Create(secret string, data model.CreatePost, opts ...DocumentOption) (*model.Post, error) {
 	options := &documentOptions{
 		documentID: id.Unique(),
 	}
