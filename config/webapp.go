@@ -8,8 +8,6 @@ import (
 type Config struct {
 	NeonDB           *DbConfig
 	AWS              *AwsConfig
-	Tusd             *TusdConfig
-	Redis            *RedisConfig
 	ImageDefaults    *ImageConfig
 	ImagesAssets     *ImageAssets
 	Appwrite         *AppwriteConfig
@@ -29,8 +27,6 @@ func NewConfig(envFiles ...string) *Config {
 	cfg := &Config{
 		AWS:              NewAwsConfig(),
 		NeonDB:           NewDbConfig(),
-		Tusd:             NewTusdConfig(),
-		Redis:            NewRedisConfig(),
 		ImagesAssets:     NewImageAssets(),
 		CloudflareR2:     NewCloudflareR2(),
 		ImageDefaults:    NewImageConfig(),

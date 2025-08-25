@@ -6,6 +6,7 @@ import (
 	"github.com/antidote-recognize0663/comics-galore-library/model"
 	"github.com/antidote-recognize0663/comics-galore-library/utils"
 	"github.com/appwrite/sdk-for-go/databases"
+	"github.com/appwrite/sdk-for-go/id"
 	"github.com/appwrite/sdk-for-go/query"
 )
 
@@ -13,10 +14,11 @@ type Payment interface {
 	Delete(documentId string) error
 	GetById(documentId string) (*model.Payment, error)
 	Create(data *model.PaymentData) (*model.Payment, error)
-	WithQueryOrderBy(field string, ascending bool) func([]string) []string
+	Update(data *model.NowPaymentsIPN) (*model.Payment, error)
+	SaveOrUpdate(data *model.NowPaymentsIPN) (*model.Payment, error)
 	WithQueryStatusNotEqual(status string) func([]string) []string
+	WithQueryOrderBy(field string, ascending bool) func([]string) []string
 	GetList(secret, userID string, limit int, offset int, opts ...func([]string) []string) (*model.PaymentList, error)
-	Update(documentId string, notification map[string]interface{}) (*model.Payment, error)
 }
 
 type payment struct {
@@ -63,46 +65,72 @@ func (p *payment) GetList(secret, userID string, limit int, offset int, opts ...
 	return &paymentList, nil
 }
 
-func (p *payment) Update(documentID string, notification map[string]interface{}) (*model.Payment, error) {
-	if documentID == "" {
-		return nil, fmt.Errorf("documentID is required to update payment")
+func (p *payment) SaveOrUpdate(data *model.NowPaymentsIPN) (*model.Payment, error) {
+	if data == nil {
+		return nil, fmt.Errorf("data is required to update payment")
+	}
+	//var saveOrUpdateData := &model.PaymentData{}
+	if data.OrderID == "" {
+		data.OrderID = id.Unique()
+	}
+	sessionClient := utils.NewAdminClient(p.apiKey, utils.WithProject(p.projectID), utils.WithEndpoint(p.endpoint))
+	database := databases.New(*sessionClient)
+	document, err := database.UpsertDocument(
+		p.databaseID,
+		p.collectionID,
+		data.OrderID,
+		data)
+	if err != nil {
+		return nil, fmt.Errorf("saveOrUpdate error : %v", err)
+	}
+	var saveOrUpdatePayment model.Payment
+	if err := document.Decode(&saveOrUpdatePayment); err != nil {
+		return nil, fmt.Errorf("saveOrUpdate decode error : %v", err)
+	}
+	return &saveOrUpdatePayment, nil
+}
+
+func (p *payment) Update(data *model.NowPaymentsIPN) (*model.Payment, error) {
+	if data == nil {
+		return nil, fmt.Errorf("data is required to update payment")
 	}
 	sessionClient := utils.NewAdminClient(p.apiKey, utils.WithProject(p.projectID), utils.WithEndpoint(p.endpoint))
 	database := databases.New(*sessionClient)
 	document, err := database.UpdateDocument(
 		p.databaseID,
 		p.collectionID,
-		documentID,
-		database.WithUpdateDocumentData(notification))
+		data.OrderID, database.WithUpdateDocumentData(data))
 	if err != nil {
-		return nil, fmt.Errorf("update error for documentID '%s': %v", documentID, err)
+		return nil, fmt.Errorf("saveOrUpdate error : %v", err)
 	}
-	var payment model.Payment
-	if err := document.Decode(&payment); err != nil {
-		return nil, fmt.Errorf("update decode error for documentID '%s': %v", documentID, err)
+	var saveOrUpdatePayment model.Payment
+	if err := document.Decode(&saveOrUpdatePayment); err != nil {
+		return nil, fmt.Errorf("saveOrUpdate decode error : %v", err)
 	}
-	return &payment, nil
+	return &saveOrUpdatePayment, nil
 }
 
 func (p *payment) Create(data *model.PaymentData) (*model.Payment, error) {
-	documentId := data.OrderID
-	data.OrderID = ""
+	if data == nil {
+		return nil, fmt.Errorf("data is required to create payment")
+	}
+	data.OrderID = id.Unique()
 	adminClient := utils.NewAdminClient(p.apiKey, utils.WithProject(p.projectID), utils.WithEndpoint(p.endpoint))
 	database := databases.New(*adminClient)
 	document, err := database.CreateDocument(
 		p.databaseID,
 		p.collectionID,
-		documentId,
+		data.OrderID,
 		data,
 	)
 	if err != nil {
 		return nil, err
 	}
-	var payment model.Payment
-	if err := document.Decode(&payment); err != nil {
-		return nil, fmt.Errorf("create decode error for documentID '%s': %v", documentId, err)
+	var createPayment model.Payment
+	if err := document.Decode(&createPayment); err != nil {
+		return nil, fmt.Errorf("create decode error for documentID '%s': %v", data.OrderID, err)
 	}
-	return &payment, nil
+	return &createPayment, nil
 }
 
 func (p *payment) GetById(documentId string) (*model.Payment, error) {
@@ -110,13 +138,13 @@ func (p *payment) GetById(documentId string) (*model.Payment, error) {
 	database := databases.New(*adminClient)
 	documents, err := database.GetDocument(p.databaseID, p.collectionID, documentId)
 	if err != nil {
-		return nil, fmt.Errorf("[PaymentDataService:GetById] Failed to get document with fileId '%s': %v", documentId, err)
+		return nil, fmt.Errorf("failed to get document with fileId '%s': %v", documentId, err)
 	}
-	var payment model.Payment
-	if err := documents.Decode(&payment); err != nil {
-		return nil, fmt.Errorf("[PaymentDataService:GetById] Failed to decode document with fileId '%s': %v", documentId, err)
+	var getPayment model.Payment
+	if err := documents.Decode(&getPayment); err != nil {
+		return nil, fmt.Errorf("failed to decode document with fileId '%s': %v", documentId, err)
 	}
-	return &payment, nil
+	return &getPayment, nil
 }
 
 func (p *payment) Delete(documentId string) error {
@@ -124,7 +152,7 @@ func (p *payment) Delete(documentId string) error {
 	database := databases.New(*adminClient)
 	_, err := database.DeleteDocument(p.databaseID, p.collectionID, documentId)
 	if err != nil {
-		return fmt.Errorf("[PaymentDataService:Delete] Failed to delete document with fileId '%s': %v", documentId, err)
+		return fmt.Errorf("failed to delete document with fileId '%s': %v", documentId, err)
 	}
 	return nil
 }
