@@ -10,6 +10,9 @@ import (
 )
 
 type Payment interface {
+	Delete(documentId string) error
+	GetById(documentId string) (*model.Payment, error)
+	Create(data *model.PaymentData) (*model.Payment, error)
 	WithQueryOrderBy(field string, ascending bool) func([]string) []string
 	WithQueryStatusNotEqual(status string) func([]string) []string
 	GetList(secret, userID string, limit int, offset int, opts ...func([]string) []string) (*model.PaymentList, error)
