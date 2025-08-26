@@ -14,7 +14,7 @@ type PostData struct {
 	Cover       Image     `json:"cover"`
 	Previews    []Image   `json:"previews"`
 	Archives    []Archive `json:"archives"`
-	Metrics     Metrics   `json:"metrics"`
+	Metrics     *Metrics  `json:"metrics"`
 }
 
 type Post struct {

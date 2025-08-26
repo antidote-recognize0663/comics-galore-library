@@ -20,21 +20,21 @@ type NowPayments interface {
 type nowPayments struct {
 	apiKey            string
 	endpoint          string
-	subscriptionPlans []model.SubscriptionPlan
+	subscriptionPlans []config.SubscriptionPlan
 }
 
 func NewNowPaymentsWithConfig(cfg *config.Config) NowPayments {
 	return &nowPayments{
 		apiKey:            cfg.Appwrite.ApiKey,
 		endpoint:          cfg.Appwrite.Endpoint,
-		subscriptionPlans: *cfg.Application.SubscriptionPlans,
+		subscriptionPlans: *cfg.Application.GetSubscriptionPlans(),
 	}
 }
 
 func NewNowPayments(opts ...Option) NowPayments {
 	cfg := &Config{
 		endpoint:          "https://api.nowpayments.io/v1",
-		subscriptionPlans: *model.NewSubscriptionPlans(),
+		subscriptionPlans: *config.NewSubscriptionPlans(),
 	}
 	for _, opt := range opts {
 		opt(cfg)
@@ -89,8 +89,8 @@ func (n *nowPayments) GetApiStatus() (*model.StatusResponse, error) {
 
 func (n *nowPayments) CreateNowPayment(priceIndex int, priceCurrency string, payAmount float64, baseUrl string) (*model.PaymentResponse, error) {
 
-	description := n.subscriptionPlans[priceIndex].Name
-	priceAmount := n.subscriptionPlans[priceIndex].Price
+	description := n.subscriptionPlans[priceIndex].GetName()
+	priceAmount := n.subscriptionPlans[priceIndex].GetPrice()
 
 	ipnCallbackURL := fmt.Sprintf("%s/nowpayments/ipn", baseUrl)
 
@@ -170,7 +170,7 @@ func WithEndpoint(endpoint string) Option {
 type Config struct {
 	apiKey            string
 	endpoint          string
-	subscriptionPlans []model.SubscriptionPlan
+	subscriptionPlans []config.SubscriptionPlan
 }
 
 type Option func(*Config)

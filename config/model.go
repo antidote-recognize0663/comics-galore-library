@@ -40,8 +40,8 @@ func NewSubscriptionPlan(id, name string, price float64, duration string, discou
 	}
 }
 
-func NewSubscriptionPlans() []SubscriptionPlan {
-	return []SubscriptionPlan{
+func NewSubscriptionPlans() *[]SubscriptionPlan {
+	return &[]SubscriptionPlan{
 		NewSubscriptionPlan("1", "Monthly Plan", 10, "1 month", 0.0),
 		NewSubscriptionPlan("2", "Quarterly Plan", 30, "3 months", 0.0),
 		NewSubscriptionPlan("3", "Semi-annual Plan", 60, "6 months", 0.1),
@@ -73,8 +73,8 @@ func NewCategory(value, name, href string) Category {
 	}
 }
 
-func NewCategories() map[string]Category {
-	return map[string]Category{
+func NewCategories() *map[string]Category {
+	return &map[string]Category{
 		"misc":        NewCategory("0", "Misc", "/category/misc"),
 		"hentai":      NewCategory("1", "Hentai / Doujinshi", "/category/hentai"),
 		"erotica":     NewCategory("2", "Mature / Erotica", "/category/erotica"),
