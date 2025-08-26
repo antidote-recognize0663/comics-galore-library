@@ -11,7 +11,7 @@ type Config struct {
 	ImageDefaults    *ImageConfig
 	ImagesAssets     *ImageAssets
 	Appwrite         *AppwriteConfig
-	Application      *ApplicationConfig
+	Application      ApplicationConfig
 	NowPayments      *NowPaymentsConfig
 	CloudflareR2     *CloudflareR2Config
 	CloudflareImages *CloudflareImagesConfig
