@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/antidote-recognize0663/comics-galore-library/utils"
+	"fmt"
 	"github.com/appwrite/sdk-for-go/models"
 	"time"
 )
@@ -60,12 +60,12 @@ func NewPaymentData(userId string, payment *PaymentResponse) (*PaymentData, erro
 		60:  {0, 6, 0}, // 6 months
 		120: {1, 0, 0}, // 1 year
 	}
-	expiresAt, err := utils.GetExpirationDate(time.Now(), payment.PriceAmount, durationMap)
+	expiresAt, err := getExpirationDate(time.Now(), payment.PriceAmount, durationMap)
 	if err != nil {
 		return nil, err
 	}
 	//expiresAt := expiresAt.Format(time.RFC3339)
-	qrCodeURL := utils.BuildQRCodeURL(payment.PayCurrency, payment.PayAddress, payment.PriceAmount, payment.PaymentID)
+	qrCodeURL := buildQRCodeURL(payment.PayCurrency, payment.PayAddress, payment.PriceAmount, payment.PaymentID)
 	return &PaymentData{
 		UserID:           userId,
 		OrderID:          payment.OrderID,
@@ -86,4 +86,20 @@ type Duration struct {
 	Years  int
 	Months int
 	Days   int
+}
+
+func getExpirationDate(startTime time.Time, amount float64, durationMap map[float64]Duration) (string, error) {
+	duration, exists := durationMap[amount]
+	if !exists {
+		return "", fmt.Errorf("invalid amount: no duration configured for %.2f", amount)
+	}
+	expirationDate := startTime.AddDate(duration.Years, duration.Months, duration.Days)
+	return expirationDate.Format(time.RFC3339), nil
+}
+
+func buildQRCodeURL(currency, address string, amount float64, id string) string {
+	const defaultSize = "200"
+	const defaultMargin = "0"
+	return fmt.Sprintf("/qrcode/%s/%s?amount=%.2f&label=%s&size=%s&margin=%s",
+		currency, address, amount, id, defaultSize, defaultMargin)
 }
