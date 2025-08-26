@@ -80,11 +80,13 @@ func (a *applicationConfig) GetCategory(key string) (Category, bool) {
 func NewApplicationConfig() ApplicationConfig {
 	var parseErr error
 	config := &applicationConfig{
-		Env:       GetEnv("ENV", "development"),
-		Port:      GetIntEnv("PORT", 3000, &parseErr),
-		AppName:   GetEnv("APP_NAME", "Comics Galore"),
-		BaseUrl:   GetEnv("BASE_URL", "http://localhost:3000"),
-		JwtSecret: GetEnv("JWT_SECRET", "PzBK+Wmb6LtK+8PfiLQ+dWLCsRnsTQm3v+He14YuZac="),
+		Env:               GetEnv("ENV", "development"),
+		Port:              GetIntEnv("PORT", 3000, &parseErr),
+		AppName:           GetEnv("APP_NAME", "Comics Galore"),
+		BaseUrl:           GetEnv("BASE_URL", "http://localhost:3000"),
+		JwtSecret:         GetEnv("JWT_SECRET", "PzBK+Wmb6LtK+8PfiLQ+dWLCsRnsTQm3v+He14YuZac="),
+		Categories:        NewCategories(),
+		SubscriptionPlans: NewSubscriptionPlans(),
 	}
 	if parseErr != nil {
 		log.Printf("error parsing integer environment variables: %v", parseErr)
