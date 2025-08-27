@@ -25,7 +25,7 @@ type images struct {
 	imageUrl string
 }
 
-func NewImageWithConfig(config config.Config) Images {
+func NewImagesWithConfig(config *config.Config) Images {
 	client := resty.New()
 	client.SetTimeout(1 * time.Minute)
 	return &images{
@@ -35,19 +35,19 @@ func NewImageWithConfig(config config.Config) Images {
 	}
 }
 
-func NewImage(opts ...Option) Images {
-	_config := &Config{
+func NewImages(opts ...Option) Images {
+	cfg := &Config{
 		imagesURL: "https://api.cloudflare.com/client/v4/accounts/b879240179ed3d643bf783745c93b100/images/v1",
 	}
 	for _, opt := range opts {
-		opt(_config)
+		opt(cfg)
 	}
 	client := resty.New()
 	client.SetTimeout(1 * time.Minute)
 	return &images{
 		client:   client,
-		apiKey:   _config.apiKey,
-		imageUrl: _config.imagesURL,
+		apiKey:   cfg.apiKey,
+		imageUrl: cfg.imagesURL,
 	}
 }
 
