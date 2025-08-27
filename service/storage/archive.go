@@ -1,4 +1,4 @@
-package archive
+package storage
 
 import (
 	"fmt"
@@ -9,20 +9,20 @@ import (
 	"github.com/appwrite/sdk-for-go/file"
 )
 
-type Archive interface {
+type AppwriteStorage interface {
 	GeFileDownload(secret string, fileId string) (*[]byte, error)
 	GetFile(secret string, fileId string) (*model.File, error)
 	DeleteFile(secret string, fileId string) error
 	CreateFile(secret string, fileId string, file file.InputFile) (*model.File, error)
 }
 
-type archive struct {
+type appwriteStorage struct {
 	endpoint  string
 	bucketID  string
 	projectID string
 }
 
-func (a *archive) GetFile(secret string, fileId string) (*model.File, error) {
+func (a *appwriteStorage) GetFile(secret string, fileId string) (*model.File, error) {
 	client := utils.NewSessionClient(secret, utils.WithProject(a.projectID), utils.WithEndpoint(a.endpoint))
 	storage := appwrite.NewStorage(*client)
 	getFile, err := storage.GetFile(a.bucketID, fileId)
@@ -39,7 +39,7 @@ func (a *archive) GetFile(secret string, fileId string) (*model.File, error) {
 	}, nil
 }
 
-func (a *archive) GeFileDownload(secret string, fileId string) (*[]byte, error) {
+func (a *appwriteStorage) GeFileDownload(secret string, fileId string) (*[]byte, error) {
 	client := utils.NewSessionClient(secret, utils.WithProject(a.projectID), utils.WithEndpoint(a.endpoint))
 	storage := appwrite.NewStorage(*client)
 	fileDownload, err := storage.GetFileDownload(a.bucketID, fileId)
@@ -49,7 +49,7 @@ func (a *archive) GeFileDownload(secret string, fileId string) (*[]byte, error) 
 	return fileDownload, nil
 }
 
-func (a *archive) DeleteFile(secret string, fileId string) error {
+func (a *appwriteStorage) DeleteFile(secret string, fileId string) error {
 	client := utils.NewSessionClient(secret, utils.WithProject(a.projectID), utils.WithEndpoint(a.endpoint))
 	storage := appwrite.NewStorage(*client)
 	_, err := storage.DeleteFile(a.bucketID, fileId)
@@ -59,7 +59,7 @@ func (a *archive) DeleteFile(secret string, fileId string) error {
 	return nil
 }
 
-func (a *archive) CreateFile(secret string, fileId string, file file.InputFile) (*model.File, error) {
+func (a *appwriteStorage) CreateFile(secret string, fileId string, file file.InputFile) (*model.File, error) {
 	client := utils.NewSessionClient(secret, utils.WithProject(a.projectID), utils.WithEndpoint(a.endpoint))
 	storage := appwrite.NewStorage(*client)
 	createFile, err := storage.CreateFile(a.bucketID, fileId, file)
@@ -94,7 +94,7 @@ func WithBucketID(bucketID string) Option {
 	}
 }
 
-func NewArchive(opts ...Option) Archive {
+func NewArchive(opts ...Option) AppwriteStorage {
 	_config := &Config{
 		endpoint:  "https://fra.cloud.appwrite.io/v1",
 		projectID: "6510a59f633f9d57fba2",
@@ -104,15 +104,15 @@ func NewArchive(opts ...Option) Archive {
 		opt(_config)
 	}
 
-	return &archive{
+	return &appwriteStorage{
 		endpoint:  _config.endpoint,
 		bucketID:  _config.bucketID,
 		projectID: _config.projectID,
 	}
 }
 
-func NewArchiveWithConfig(config *config.Config) Archive {
-	return &archive{
+func NewArchiveWithConfig(config *config.Config) AppwriteStorage {
+	return &appwriteStorage{
 		endpoint:  config.Appwrite.Endpoint,
 		projectID: config.Appwrite.ProjectID,
 		bucketID:  config.Appwrite.BucketIDArchives,

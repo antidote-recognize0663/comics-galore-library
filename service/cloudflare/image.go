@@ -13,29 +13,29 @@ import (
 	"time"
 )
 
-type Image interface {
+type Images interface {
 	UploadFromReader(reader io.Reader, filename string, metadata map[string]string, requireSignedUrls bool) (*model.CloudflareImageResponse, error)
 	UploadFromURL(url string, metadata map[string]string, requireSignedUrls bool) (*model.CloudflareImageResponse, error)
 	ListImages(page, perPage int) (*model.CloudflareListImagesResponse, error)
 }
 
-type image struct {
+type images struct {
 	client   *resty.Client
 	apiKey   string
 	imageUrl string
 }
 
-func NewImageWithConfig(config config.Config) Image {
+func NewImageWithConfig(config config.Config) Images {
 	client := resty.New()
 	client.SetTimeout(1 * time.Minute)
-	return &image{
+	return &images{
 		client:   client,
 		apiKey:   config.CloudflareImages.ApiKey,
 		imageUrl: config.CloudflareImages.ImagesURL,
 	}
 }
 
-func NewImage(opts ...Option) Image {
+func NewImage(opts ...Option) Images {
 	_config := &Config{
 		imagesURL: "https://api.cloudflare.com/client/v4/accounts/b879240179ed3d643bf783745c93b100/images/v1",
 	}
@@ -44,7 +44,7 @@ func NewImage(opts ...Option) Image {
 	}
 	client := resty.New()
 	client.SetTimeout(1 * time.Minute)
-	return &image{
+	return &images{
 		client:   client,
 		apiKey:   _config.apiKey,
 		imageUrl: _config.imagesURL,
@@ -63,7 +63,7 @@ func WithImagesURL(imagesURL string) Option {
 	}
 }
 
-func (s *image) UploadFromReader(reader io.Reader, fileName string, metadata map[string]string, requireSignedURLs bool) (*model.CloudflareImageResponse, error) {
+func (s *images) UploadFromReader(reader io.Reader, fileName string, metadata map[string]string, requireSignedURLs bool) (*model.CloudflareImageResponse, error) {
 	if reader == nil {
 		return nil, fmt.Errorf("reader is nil")
 	}
@@ -107,7 +107,7 @@ func (s *image) UploadFromReader(reader io.Reader, fileName string, metadata map
 }
 
 // UploadFromURL uploads an image from a public URL.
-func (s *image) UploadFromURL(imageURL string, metadata map[string]string, requireSignedURLs bool) (*model.CloudflareImageResponse, error) {
+func (s *images) UploadFromURL(imageURL string, metadata map[string]string, requireSignedURLs bool) (*model.CloudflareImageResponse, error) {
 	metadataBytes, err := json.Marshal(metadata)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal metadata to JSON: %w", err)
@@ -135,7 +135,7 @@ func (s *image) UploadFromURL(imageURL string, metadata map[string]string, requi
 	return &response, nil
 }
 
-func (s *image) ListImages(page, perPage int) (*model.CloudflareListImagesResponse, error) {
+func (s *images) ListImages(page, perPage int) (*model.CloudflareListImagesResponse, error) {
 	var response model.CloudflareListImagesResponse
 	resp, err := s.client.R().
 		SetQueryParams(map[string]string{

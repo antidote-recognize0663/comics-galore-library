@@ -11,19 +11,19 @@ import (
 	"log"
 )
 
-type Archive interface {
+type FileStorage interface {
 	GetFile(key string) ([]byte, error)
 	PutFile(key string, data []byte) error
 	DeleteFile(key string) error
 	Reset() error
 }
 
-type archive struct {
+type fileStorage struct {
 	client *minio.Client
 	bucket string
 }
 
-func (a archive) GetFile(key string) ([]byte, error) {
+func (a fileStorage) GetFile(key string) ([]byte, error) {
 	reader, err := a.client.GetObject(context.Background(), a.bucket, key, minio.GetObjectOptions{})
 	if err != nil {
 		return nil, err
@@ -40,7 +40,7 @@ func (a archive) GetFile(key string) ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-func (a archive) PutFile(key string, data []byte) error {
+func (a fileStorage) PutFile(key string, data []byte) error {
 	contentReader := bytes.NewReader(data)
 	info, err := a.client.PutObject(
 		context.Background(),
@@ -59,7 +59,7 @@ func (a archive) PutFile(key string, data []byte) error {
 	return nil
 }
 
-func (a archive) DeleteFile(key string) error {
+func (a fileStorage) DeleteFile(key string) error {
 	err := a.client.RemoveObject(context.Background(), a.bucket, key, minio.RemoveObjectOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to delete object %s from bucket %s: %w", key, a.bucket, err)
@@ -68,7 +68,7 @@ func (a archive) DeleteFile(key string) error {
 	return nil
 }
 
-func (a archive) Reset() error {
+func (a fileStorage) Reset() error {
 	objectCh := a.client.ListObjects(context.Background(), a.bucket, minio.ListObjectsOptions{
 		Recursive: true,
 	})
@@ -86,7 +86,7 @@ func (a archive) Reset() error {
 	return nil
 }
 
-func NewArchiveWithConfig(config config.Config) Archive {
+func NewArchiveWithConfig(config config.Config) FileStorage {
 	minioClient, err := minio.New(config.AWS.S3Endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(config.AWS.AccessKeyID, config.AWS.SecretAccessKey, ""),
 		Secure: true,
@@ -94,7 +94,7 @@ func NewArchiveWithConfig(config config.Config) Archive {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	return &archive{
+	return &fileStorage{
 		bucket: config.AWS.S3Bucket,
 		client: minioClient,
 	}
@@ -109,7 +109,7 @@ type Config struct {
 
 type Option func(*Config)
 
-func NewArchive(opts ...Option) Archive {
+func NewArchive(opts ...Option) FileStorage {
 	cfg := &Config{
 		bucket:   "comics-galore",
 		endpoint: "s3.us-east-005.backblazeb2.com",
@@ -124,7 +124,7 @@ func NewArchive(opts ...Option) Archive {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	return &archive{
+	return &fileStorage{
 		bucket: cfg.bucket,
 		client: minioClient,
 	}
