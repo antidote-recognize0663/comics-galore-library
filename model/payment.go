@@ -52,6 +52,17 @@ type PaymentList struct {
 	Payments []Payment `json:"documents"`
 }
 
+func NewPayment(document *models.Document) (*Payment, error) {
+	var paymentData PaymentData
+	if err := document.Decode(&paymentData); err != nil {
+		return nil, err
+	}
+	return &Payment{
+		Document:    document,
+		PaymentData: &paymentData,
+	}, nil
+}
+
 func NewPaymentData(userId string, payment *PaymentResponse) (*PaymentData, error) {
 	durationMap := map[float64]Duration{
 		10:  {0, 1, 0}, // 1 month

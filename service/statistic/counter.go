@@ -10,8 +10,8 @@ import (
 )
 
 type Counter interface {
-	Increment(attributeName string) (int64, error)
-	Decrement(attributeName string) (int64, error)
+	Increment(attributeName string, value ...int64) (int64, error)
+	Decrement(attributeName string, value ...int64) (int64, error)
 	GetValue(attributeName string) (int64, error)
 }
 
@@ -85,9 +85,14 @@ func NewCounterWithConfig(cfg *config.Config) Counter {
 	}
 }
 
-func (s *counter) Increment(attributeName string) (int64, error) {
+func (s *counter) Increment(attributeName string, value ...int64) (int64, error) {
 	db := appwrite.NewDatabases(*s.client)
 	db.WithGetDocumentQueries([]string{query.Select([]string{attributeName})})
+	if len(value) == 1 {
+		db.WithIncrementDocumentAttributeValue(float64(value[0]))
+	} else {
+		return 0, fmt.Errorf("invalid number of arguments only one optional argument is allowed")
+	}
 	document, err := db.IncrementDocumentAttribute(
 		s.databaseID,
 		s.collectionID,
@@ -108,9 +113,14 @@ func (s *counter) Increment(attributeName string) (int64, error) {
 	return int64(newValue), nil
 }
 
-func (s *counter) Decrement(attributeName string) (int64, error) {
+func (s *counter) Decrement(attributeName string, value ...int64) (int64, error) {
 	db := appwrite.NewDatabases(*s.client)
 	db.WithGetDocumentQueries([]string{query.Select([]string{attributeName})})
+	if len(value) == 1 {
+		db.WithDecrementDocumentAttributeValue(float64(value[0]))
+	} else {
+		return 0, fmt.Errorf("invalid number of arguments only one optional argument is allowed")
+	}
 	document, err := db.DecrementDocumentAttribute(
 		s.databaseID,
 		s.collectionID,
