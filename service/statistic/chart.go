@@ -7,13 +7,14 @@ import (
 	"github.com/antidote-recognize0663/comics-galore-library/utils"
 	"github.com/appwrite/sdk-for-go/appwrite"
 	"github.com/appwrite/sdk-for-go/client"
+	"github.com/appwrite/sdk-for-go/databases"
 	"github.com/appwrite/sdk-for-go/id"
 	"github.com/appwrite/sdk-for-go/query"
 )
 
 type Chart interface {
 	GetList(limit int, offset int, opts ...func([]string) []string) (*model.ChartList, error)
-	AddData(data model.ChartData, opts ...DocumentOption) (*model.Chart, error)
+	AddData(data *model.ChartData, opts ...DocumentOption) (*model.Chart, error)
 }
 
 type chart struct {
@@ -21,38 +22,44 @@ type chart struct {
 	projectID    string
 	databaseID   string
 	collectionID string
-	client       *client.Client
+	database     *databases.Databases
 }
 
-func NewChart(opts ...Option) Chart {
+func NewChart(client *client.Client, opts ...Option) Chart {
 	cfg := &Config{
+		database:     appwrite.NewDatabases(*client),
 		endpoint:     "https://fra.cloud.appwrite.io/v1",
 		projectID:    "6510a59f633f9d57fba2",
 		databaseID:   "6510add9771bcf260b40",
-		collectionID: "",
+		collectionID: "689d17bb000013a8cf61",
 	}
 	for _, opt := range opts {
 		opt(cfg)
 	}
 	return &chart{
+		database:     cfg.database,
 		endpoint:     cfg.endpoint,
 		projectID:    cfg.projectID,
 		databaseID:   cfg.databaseID,
 		collectionID: cfg.collectionID,
-		client:       utils.NewAdminClient(cfg.apiKey, utils.WithEndpoint(cfg.endpoint), utils.WithProject(cfg.projectID)),
 	}
 }
 
 func NewChartWithConfig(cfg *config.Config) Chart {
+	adminClient := utils.NewAdminClient(
+		cfg.Appwrite.CollectionIDCharts,
+		utils.WithProject(cfg.Appwrite.ProjectID),
+		utils.WithEndpoint(cfg.Appwrite.Endpoint))
 	return &chart{
-		endpoint:   cfg.Appwrite.Endpoint,
-		projectID:  cfg.Appwrite.ProjectID,
-		databaseID: cfg.Appwrite.DatabaseID,
+		endpoint:     cfg.Appwrite.Endpoint,
+		projectID:    cfg.Appwrite.ProjectID,
+		databaseID:   cfg.Appwrite.DatabaseID,
+		collectionID: cfg.Appwrite.CollectionIDCharts,
+		database:     appwrite.NewDatabases(*adminClient),
 	}
 }
 
 func (p *chart) GetList(limit int, offset int, opts ...func([]string) []string) (*model.ChartList, error) {
-	database := appwrite.NewDatabases(*p.client)
 	queries := []string{
 		query.Limit(limit),
 		query.Offset(offset),
@@ -60,10 +67,10 @@ func (p *chart) GetList(limit int, offset int, opts ...func([]string) []string) 
 	for _, opt := range opts {
 		queries = opt(queries)
 	}
-	documentList, err := database.ListDocuments(
+	documentList, err := p.database.ListDocuments(
 		p.databaseID,
 		p.collectionID,
-		database.WithListDocumentsQueries(queries),
+		p.database.WithListDocumentsQueries(queries),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("GetList error: %v", err)
@@ -81,7 +88,7 @@ type documentOptions struct {
 	documentID string
 }
 
-func (p *chart) AddData(data model.ChartData, opts ...DocumentOption) (*model.Chart, error) {
+func (p *chart) AddData(data *model.ChartData, opts ...DocumentOption) (*model.Chart, error) {
 	options := &documentOptions{
 		documentID: id.Unique(),
 	}
@@ -90,7 +97,7 @@ func (p *chart) AddData(data model.ChartData, opts ...DocumentOption) (*model.Ch
 		opt(options)
 	}
 
-	document, err := appwrite.NewDatabases(*p.client).CreateDocument(
+	document, err := p.database.CreateDocument(
 		p.databaseID,
 		p.collectionID,
 		options.documentID,

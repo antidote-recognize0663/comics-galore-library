@@ -13,8 +13,9 @@ const (
 )
 
 type ChartData struct {
-	Value      int64      `json:"value"`
+	Value      float64    `json:"value"`
 	Label      string     `json:"label"`
+	UserID     string     `json:"user_id"`
 	Collection Collection `json:"collection"`
 }
 
@@ -28,10 +29,11 @@ func (c Collection) Validate() error {
 	}
 }
 
-func NewChartData(value int64, label, collection string) (*ChartData, error) {
+func NewChartData(value float64, label, userID, collection string) (*ChartData, error) {
 	data := ChartData{
 		Value:      value,
 		Label:      label,
+		UserID:     userID,
 		Collection: Collection(collection),
 	}
 	if err := data.Collection.Validate(); err != nil {

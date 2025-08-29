@@ -13,6 +13,7 @@ type AppwriteConfig struct {
 	RecoveryURL             string
 	NotificationURL         string
 	EmailVerificationURL    string
+	CollectionIDCharts      string
 	CollectionIDUploads     string
 	CollectionIDArchives    string
 	CollectionIDPayments    string
@@ -37,6 +38,7 @@ func NewAppwriteConfig() *AppwriteConfig {
 		BucketIDArchives:        GetEnv("APPWRITE_BUCKET_ID_ARCHIVES", "651b34b8d02e995f0cda"),
 		CounterDocumentID:       GetEnv("APPWRITE_COUNTER_DOCUMENT_ID", "689e4a4a0015fd649ac1"),
 		EmailVerificationURL:    GetEnv("APPWRITE_EMAIL_VERIFICATION_URL", "https://fra.cloud.appwrite.io/v1/auth/verification"),
+		CollectionIDCharts:      GetEnv("APPWRITE_COLLECTION_ID_CHARTS", "689d17bb000013a8cf61"),
 		CollectionIDUploads:     GetEnv("APPWRITE_COLLECTION_ID_UPLOADS", "6862e70800281295369c"),
 		CollectionIDArchives:    GetEnv("APPWRITE_COLLECTION_ID_ARCHIVES", "657793fbd86713ea94ca"),
 		CollectionIDPayments:    GetEnv("APPWRITE_COLLECTION_ID_PAYMENTS", "67806dd1003557f3794e"),

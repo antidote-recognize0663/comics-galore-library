@@ -6,6 +6,7 @@ import (
 	"github.com/antidote-recognize0663/comics-galore-library/utils"
 	"github.com/appwrite/sdk-for-go/appwrite"
 	"github.com/appwrite/sdk-for-go/client"
+	"github.com/appwrite/sdk-for-go/databases"
 	"github.com/appwrite/sdk-for-go/query"
 )
 
@@ -29,6 +30,7 @@ type Config struct {
 	documentID   string
 	databaseID   string
 	collectionID string
+	database     *databases.Databases
 }
 
 type Option func(*Config)
