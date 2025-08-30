@@ -28,8 +28,6 @@ type chart struct {
 func NewChart(client *client.Client, opts ...Option) Chart {
 	cfg := &Config{
 		database:     appwrite.NewDatabases(*client),
-		endpoint:     "https://fra.cloud.appwrite.io/v1",
-		projectID:    "6510a59f633f9d57fba2",
 		databaseID:   "6510add9771bcf260b40",
 		collectionID: "689d17bb000013a8cf61",
 	}
@@ -38,8 +36,6 @@ func NewChart(client *client.Client, opts ...Option) Chart {
 	}
 	return &chart{
 		database:     cfg.database,
-		endpoint:     cfg.endpoint,
-		projectID:    cfg.projectID,
 		databaseID:   cfg.databaseID,
 		collectionID: cfg.collectionID,
 	}

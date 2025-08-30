@@ -20,13 +20,10 @@ type counter struct {
 	databaseID   string
 	documentID   string
 	collectionID string
-	client       *client.Client
+	database     *databases.Databases
 }
 
 type Config struct {
-	apiKey       string
-	endpoint     string
-	projectID    string
 	documentID   string
 	databaseID   string
 	collectionID string
@@ -53,16 +50,9 @@ func WithDatabaseID(databaseID string) Option {
 	}
 }
 
-func WithApiKey(apiKey string) Option {
-	return func(config *Config) {
-		config.apiKey = apiKey
-	}
-}
-
-func NewCounter(opts ...Option) Counter {
+func NewCounter(client *client.Client, opts ...Option) Counter {
 	cfg := &Config{
-		endpoint:     "https://fra.cloud.appwrite.io/v1",
-		projectID:    "6510a59f633f9d57fba2",
+		database:     appwrite.NewDatabases(*client),
 		databaseID:   "6510add9771bcf260b40",
 		documentID:   "689e4a4a0015fd649ac1",
 		collectionID: "689d116400217e4cd917",
@@ -71,35 +61,39 @@ func NewCounter(opts ...Option) Counter {
 		opt(cfg)
 	}
 	return &counter{
+		database:     cfg.database,
 		databaseID:   cfg.databaseID,
 		documentID:   cfg.documentID,
 		collectionID: cfg.collectionID,
-		client:       utils.NewAdminClient(cfg.apiKey, utils.WithEndpoint(cfg.endpoint), utils.WithProject(cfg.projectID)),
 	}
 }
 
 func NewCounterWithConfig(cfg *config.Config) Counter {
+	adminClient := utils.NewAdminClient(
+		cfg.Appwrite.ApiKey,
+		utils.WithEndpoint(cfg.Appwrite.Endpoint),
+		utils.WithProject(cfg.Appwrite.ProjectID))
 	return &counter{
 		databaseID:   cfg.Appwrite.DatabaseID,
 		documentID:   cfg.Appwrite.CounterDocumentID,
 		collectionID: cfg.Appwrite.CollectionIDStatistics,
-		client:       utils.NewAdminClient(cfg.Appwrite.ApiKey, utils.WithEndpoint(cfg.Appwrite.Endpoint), utils.WithProject(cfg.Appwrite.ProjectID)),
+		database:     appwrite.NewDatabases(*adminClient),
 	}
 }
 
 func (s *counter) Increment(attributeName string, value ...int64) (int64, error) {
-	db := appwrite.NewDatabases(*s.client)
-	db.WithGetDocumentQueries([]string{query.Select([]string{attributeName})})
+	var option databases.IncrementDocumentAttributeOption
 	if len(value) == 1 {
-		db.WithIncrementDocumentAttributeValue(float64(value[0]))
+		option = s.database.WithIncrementDocumentAttributeValue(float64(value[0]))
 	} else {
 		return 0, fmt.Errorf("invalid number of arguments only one optional argument is allowed")
 	}
-	document, err := db.IncrementDocumentAttribute(
+	document, err := s.database.IncrementDocumentAttribute(
 		s.databaseID,
 		s.collectionID,
 		s.documentID,
 		attributeName,
+		option,
 	)
 	if err != nil {
 		return 0, fmt.Errorf("appwrite API error while incrementing '%s': %v", attributeName, err)
@@ -116,18 +110,18 @@ func (s *counter) Increment(attributeName string, value ...int64) (int64, error)
 }
 
 func (s *counter) Decrement(attributeName string, value ...int64) (int64, error) {
-	db := appwrite.NewDatabases(*s.client)
-	db.WithGetDocumentQueries([]string{query.Select([]string{attributeName})})
+	var option databases.DecrementDocumentAttributeOption
 	if len(value) == 1 {
-		db.WithDecrementDocumentAttributeValue(float64(value[0]))
+		option = s.database.WithDecrementDocumentAttributeValue(float64(value[0]))
 	} else {
 		return 0, fmt.Errorf("invalid number of arguments only one optional argument is allowed")
 	}
-	document, err := db.DecrementDocumentAttribute(
+	document, err := s.database.DecrementDocumentAttribute(
 		s.databaseID,
 		s.collectionID,
 		s.documentID,
 		attributeName,
+		option,
 	)
 	if err != nil {
 		return 0, fmt.Errorf("appwrite API error while decrementing '%s': %v", attributeName, err)
@@ -144,12 +138,11 @@ func (s *counter) Decrement(attributeName string, value ...int64) (int64, error)
 }
 
 func (s *counter) GetValue(attributeName string) (int64, error) {
-	db := appwrite.NewDatabases(*s.client)
-	db.WithGetDocumentQueries([]string{query.Select([]string{attributeName})})
-	document, err := db.GetDocument(
+	document, err := s.database.GetDocument(
 		s.databaseID,
 		s.collectionID,
 		s.documentID,
+		s.database.WithGetDocumentQueries([]string{query.Select([]string{attributeName})}),
 	)
 	if err != nil {
 		return 0, fmt.Errorf("appwrite API error while fetching : %v", err)
