@@ -13,12 +13,14 @@ import (
 type Session interface {
 	DeleteCurrentSession(secret string) error
 	GetAccount(secret string) (*model.Account, error)
+	GetAccount2(secret string) (*model.Account, error)
 	UpdatePreferences(secret string, prefs *model.Prefs) (*model.Account, error)
 	CreateVerification(secret string, verificationUrl string) (*model.Token, error)
 	VerifyAccount(secret, userId string) (*model.Token, error)
 	UpdateName(secret, name string) (*model.Account, error)
 	UpdateEmail(secret, email, password string) (*model.Account, error)
 	UpdatePassword(secret, oldPassword, newPassword string) (*model.Account, error)
+	GetPrefs(secret string) (*model.Prefs, error)
 }
 
 type session struct {
@@ -26,8 +28,46 @@ type session struct {
 	projectID string
 }
 
+func (s *session) GetAccount2(secret string) (*model.Account, error) {
+	if secret == "" {
+		return nil, fmt.Errorf("secret cannot be empty")
+	}
+	account := appwrite.NewAccount(*utils.NewSessionClient(
+		secret, utils.WithEndpoint(s.endpoint), utils.WithProject(s.projectID)))
+	data, err := account.Get()
+	if err != nil {
+		return nil, fmt.Errorf("error getting account: %v", err)
+	}
+	var response model.Account
+	if err := data.Decode(&response); err != nil {
+		return nil, fmt.Errorf("error decoding account: %v", err)
+	}
+	return &response, nil
+}
+
+func (s *session) GetPrefs(secret string) (*model.Prefs, error) {
+	if secret == "" {
+		return nil, fmt.Errorf("secret cannot be empty")
+	}
+	account := appwrite.NewAccount(*utils.NewSessionClient(
+		secret, utils.WithEndpoint(s.endpoint), utils.WithProject(s.projectID)))
+	prefs, err := account.GetPrefs()
+	if err != nil {
+		return nil, fmt.Errorf("error getting prefs: %v", err)
+	}
+	var preferences model.Prefs
+	if err := prefs.Decode(&preferences); err != nil {
+		return nil, fmt.Errorf("failed to decode prefs: %v", err)
+	}
+	return &model.Prefs{
+		Tumblr:   preferences.Tumblr,
+		Twitter:  preferences.Twitter,
+		AvatarID: preferences.AvatarID,
+		Facebook: preferences.Facebook,
+	}, nil
+}
+
 type Config struct {
-	apiKey    string
 	endpoint  string
 	projectID string
 }
@@ -43,12 +83,6 @@ func WithEndpoint(endpoint string) Option {
 func WithProject(projectID string) Option {
 	return func(c *Config) {
 		c.projectID = projectID
-	}
-}
-
-func WithAPIKey(apiKey string) Option {
-	return func(c *Config) {
-		c.apiKey = apiKey
 	}
 }
 
@@ -99,16 +133,16 @@ func NewSessionWithConfig(config *config.Config) Session {
 }
 
 func NewSession(options ...Option) Session {
-	_config := &Config{
+	cfg := &Config{
 		endpoint:  "https://fra.cloud.appwrite.io/v1",
 		projectID: "6510a59f633f9d57fba2",
 	}
 	for _, option := range options {
-		option(_config)
+		option(cfg)
 	}
 	return &session{
-		endpoint:  _config.endpoint,
-		projectID: _config.projectID,
+		endpoint:  cfg.endpoint,
+		projectID: cfg.projectID,
 	}
 }
 

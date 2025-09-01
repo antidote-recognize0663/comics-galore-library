@@ -95,19 +95,19 @@ func WithBucketID(bucketID string) Option {
 }
 
 func NewArchive(opts ...Option) AppwriteStorage {
-	_config := &Config{
+	cfg := &Config{
 		endpoint:  "https://fra.cloud.appwrite.io/v1",
 		projectID: "6510a59f633f9d57fba2",
 		bucketID:  "651b34b8d02e995f0cda",
 	}
 	for _, opt := range opts {
-		opt(_config)
+		opt(cfg)
 	}
 
 	return &appwriteStorage{
-		endpoint:  _config.endpoint,
-		bucketID:  _config.bucketID,
-		projectID: _config.projectID,
+		endpoint:  cfg.endpoint,
+		bucketID:  cfg.bucketID,
+		projectID: cfg.projectID,
 	}
 }
 

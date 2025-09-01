@@ -5,8 +5,11 @@ import (
 	"github.com/antidote-recognize0663/comics-galore-library/config"
 	"github.com/antidote-recognize0663/comics-galore-library/model"
 	"github.com/antidote-recognize0663/comics-galore-library/utils"
+	"github.com/appwrite/sdk-for-go/account"
 	"github.com/appwrite/sdk-for-go/appwrite"
+	"github.com/appwrite/sdk-for-go/client"
 	"github.com/appwrite/sdk-for-go/id"
+	"github.com/appwrite/sdk-for-go/users"
 )
 
 type Admin interface {
@@ -18,31 +21,22 @@ type Admin interface {
 }
 
 type admin struct {
-	apiKey    string
-	endpoint  string
-	projectID string
+	user    *users.Users
+	account *account.Account
 }
 
 func NewAdminWithConfig(config *config.Config) Admin {
+	adminClient := utils.NewAdminClient(config.Appwrite.ApiKey, utils.WithProject(config.Appwrite.ProjectID), utils.WithEndpoint(config.Appwrite.Endpoint))
 	return &admin{
-		apiKey:    config.Appwrite.ApiKey,
-		endpoint:  config.Appwrite.Endpoint,
-		projectID: config.Appwrite.ProjectID,
+		user:    appwrite.NewUsers(*adminClient),
+		account: appwrite.NewAccount(*adminClient),
 	}
 }
 
-func NewAdmin(options ...Option) Admin {
-	_config := &Config{
-		endpoint:  "https://fra.cloud.appwrite.io/v1",
-		projectID: "6510a59f633f9d57fba2",
-	}
-	for _, option := range options {
-		option(_config)
-	}
+func NewAdmin(client *client.Client) Admin {
 	return &admin{
-		apiKey:    _config.apiKey,
-		endpoint:  _config.endpoint,
-		projectID: _config.projectID,
+		user:    appwrite.NewUsers(*client),
+		account: appwrite.NewAccount(*client),
 	}
 }
 
@@ -53,8 +47,7 @@ func (s *admin) SignIn(email, password string) (*model.Session, error) {
 	if password == "" {
 		return nil, fmt.Errorf("password cannot be empty")
 	}
-	account := appwrite.NewAccount(*utils.NewAdminClient(s.apiKey, utils.WithProject(s.projectID), utils.WithEndpoint(s.endpoint)))
-	session, err := account.CreateEmailPasswordSession(email, password)
+	session, err := s.account.CreateEmailPasswordSession(email, password)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create session: %w", err)
 	}
@@ -65,8 +58,7 @@ func (s *admin) GetUser(userId string) (*model.Account, error) {
 	if userId == "" {
 		return nil, fmt.Errorf("userId cannot be empty")
 	}
-	users := appwrite.NewUsers(*utils.NewAdminClient(s.apiKey, utils.WithProject(s.projectID), utils.WithEndpoint(s.endpoint)))
-	user, err := users.Get(userId)
+	user, err := s.user.Get(userId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user %s: %w", userId, err)
 	}
@@ -83,12 +75,11 @@ func (s *admin) SignUp(username, email, password string) (*model.Account, error)
 	if password == "" {
 		return nil, fmt.Errorf("password cannot be empty")
 	}
-	users := appwrite.NewUsers(*utils.NewAdminClient(s.apiKey, utils.WithProject(s.projectID), utils.WithEndpoint(s.endpoint)))
-	user, err := users.Create(
+	user, err := s.user.Create(
 		id.Unique(),
-		users.WithCreateEmail(email),
-		users.WithCreatePassword(password),
-		users.WithCreateName(username))
+		s.user.WithCreateEmail(email),
+		s.user.WithCreatePassword(password),
+		s.user.WithCreateName(username))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
@@ -102,8 +93,7 @@ func (s *admin) PasswordReset(email string, recoveryUrl string) (*model.Token, e
 	if recoveryUrl == "" {
 		return nil, fmt.Errorf("recoveryUrl cannot be empty")
 	}
-	account := appwrite.NewAccount(*utils.NewAdminClient(s.apiKey, utils.WithProject(s.projectID), utils.WithEndpoint(s.endpoint)))
-	token, err := account.CreateRecovery(email, recoveryUrl)
+	token, err := s.account.CreateRecovery(email, recoveryUrl)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create password recovery: %w", err)
 	}
@@ -117,8 +107,7 @@ func (s *admin) UpdateVerification(secret, userId string) (*model.Token, error) 
 	if userId == "" {
 		return nil, fmt.Errorf("userId cannot be empty")
 	}
-	account := appwrite.NewAccount(*utils.NewAdminClient(s.apiKey, utils.WithProject(s.projectID), utils.WithEndpoint(s.endpoint)))
-	token, err := account.UpdateVerification(userId, secret)
+	token, err := s.account.UpdateVerification(userId, secret)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update verification: %w", err)
 	}

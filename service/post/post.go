@@ -158,20 +158,20 @@ func NewPostWithConfig(config *config.Config) Post {
 }
 
 func NewPost(opts ...Option) Post {
-	_config := &Config{
+	cfg := &Config{
 		endpoint:     "https://fra.cloud.appwrite.io/v1",
 		projectID:    "6510a59f633f9d57fba2",
 		databaseID:   "6510add9771bcf260b40",
 		collectionID: "6510ae2ee8b7da6d715d",
 	}
 	for _, opt := range opts {
-		opt(_config)
+		opt(cfg)
 	}
 	return &post{
-		endpoint:     _config.endpoint,
-		projectID:    _config.projectID,
-		databaseID:   _config.databaseID,
-		collectionID: _config.collectionID,
+		endpoint:     cfg.endpoint,
+		projectID:    cfg.projectID,
+		databaseID:   cfg.databaseID,
+		collectionID: cfg.collectionID,
 	}
 }
 
