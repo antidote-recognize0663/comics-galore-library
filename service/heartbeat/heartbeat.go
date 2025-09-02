@@ -62,19 +62,27 @@ func (h *heartbeat) GetActiveUsers(duration ...time.Duration) (*model.HeartbeatL
 }
 
 func (h *heartbeat) Upsert(userId, label string) (*model.Heartbeat, error) {
-	upsertDocument, err := h.database.UpsertDocument(h.databaseID, h.collectionID, id.Unique(), map[string]interface{}{
-		"user_id": userId,
-		"label":   label,
-	})
+	upsertData := []interface{}{
+		map[string]interface{}{
+			"$id":     id.Unique(),
+			"label":   label,
+			"user_id": userId,
+		},
+	}
+	upsertDocumentList, err := h.database.UpsertDocuments(h.databaseID, h.collectionID, upsertData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to upsert document: %w", err)
 	}
+	if len(upsertDocumentList.Documents) == 0 {
+		return nil, fmt.Errorf("upsert operation did not return any documents")
+	}
+	upsertDocument := upsertDocumentList.Documents[0]
 	var heartbeatData model.HeartbeatData
 	if err := upsertDocument.Decode(&heartbeatData); err != nil {
-		return nil, fmt.Errorf("failed to decode updated document documentId %s: %v", upsertDocument.Id, err)
+		return nil, fmt.Errorf("failed to decode upserted document with id %s: %v", upsertDocument.Id, err)
 	}
 	return &model.Heartbeat{
-		Document:      upsertDocument,
+		Document:      &upsertDocument,
 		HeartbeatData: &heartbeatData,
 	}, nil
 }
