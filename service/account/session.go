@@ -167,7 +167,7 @@ func (s *session) GetAccount(secret string) (*model.Account, error) {
 			SetHeader("Content-Type", "application/json").
 			SetHeader("X-Appwrite-Session", secret).
 			SetHeader("X-Appwrite-Project", s.projectID).
-			SetHeader("X-Appwrite-Response-Format", "1.6.0").
+			SetHeader("X-Appwrite-Response-Format", "1.8.0").
 			SetResult(&models.User{}).
 			Get(s.endpoint + "/account")
 		if err != nil {

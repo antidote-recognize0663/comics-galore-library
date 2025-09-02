@@ -63,8 +63,8 @@ func (h *heartbeat) GetActiveUsers(duration ...time.Duration) (*model.HeartbeatL
 
 func (h *heartbeat) Upsert(userId, label string) (*model.Heartbeat, error) {
 	upsertDocument, err := h.database.UpsertDocument(h.databaseID, h.collectionID, id.Unique(), map[string]interface{}{
-		"userId": userId,
-		"label":  label,
+		"user_id": userId,
+		"label":   label,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to upsert document: %w", err)
