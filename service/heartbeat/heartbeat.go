@@ -76,15 +76,11 @@ func (h *heartbeat) Upsert(userId, label string) (*model.Heartbeat, error) {
 	if len(upsertDocumentList.Documents) == 0 {
 		return nil, fmt.Errorf("upsert operation did not return any documents")
 	}
-	upsertDocument := upsertDocumentList.Documents[0]
-	var heartbeatData model.HeartbeatData
-	if err := upsertDocument.Decode(&heartbeatData); err != nil {
-		return nil, fmt.Errorf("failed to decode upserted document with id %s: %v", upsertDocument.Id, err)
+	var upsertDocuments model.HeartbeatList
+	if err := upsertDocumentList.Decode(&upsertDocuments); err != nil {
+		return nil, fmt.Errorf("failed to decode upsert documents: %w", err)
 	}
-	return &model.Heartbeat{
-		Document:      &upsertDocument,
-		HeartbeatData: &heartbeatData,
-	}, nil
+	return &upsertDocuments.Heartbeats[0], nil
 }
 
 type Config struct {

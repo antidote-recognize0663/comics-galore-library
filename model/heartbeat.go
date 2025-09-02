@@ -3,8 +3,8 @@ package model
 import "github.com/appwrite/sdk-for-go/models"
 
 type HeartbeatData struct {
-	UserID string   `json:"user_id"`
-	Labels []string `json:"labels"`
+	Label  string `json:"label"`
+	UserID string `json:"user_id"`
 }
 
 type Heartbeat struct {
