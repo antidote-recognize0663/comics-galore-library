@@ -53,7 +53,7 @@ func WithDatabaseID(databaseID string) Option {
 func NewCounter(client *client.Client, opts ...Option) Counter {
 	cfg := &Config{
 		database:     appwrite.NewDatabases(*client),
-		databaseID:   "6510add9771bcf260b40",
+		databaseID:   "651213bf7705981232aa",
 		documentID:   "689e4a4a0015fd649ac1",
 		collectionID: "689d116400217e4cd917",
 	}

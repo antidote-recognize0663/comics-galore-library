@@ -19,7 +19,7 @@ type qrcode struct {
 func NewQrcode(opts ...Option) Qrcode {
 	cfg := &Config{
 		endpoint:  "https://fra.cloud.appwrite.io/v1",
-		projectID: "6510a59f633f9d57fba2",
+		projectID: "6512130e80992b6c3e11",
 	}
 	for _, opt := range opts {
 		opt(cfg)

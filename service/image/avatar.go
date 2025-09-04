@@ -20,7 +20,7 @@ type avatar struct {
 func NewAvatar(opts ...Option) Avatar {
 	cfg := &Config{
 		endpoint:  "https://fra.cloud.appwrite.io/v1",
-		projectID: "6510a59f633f9d57fba2",
+		projectID: "6512130e80992b6c3e11",
 		bucketID:  "651b3476e4b9da11935f",
 	}
 	for _, opt := range opts {

@@ -83,6 +83,12 @@ func (s *admin) SignUp(username, email, password string) (*model.Account, error)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
+	_, err = s.user.UpdatePrefs(user.Id, model.Prefs{
+		AvatarID: "",
+		Twitter:  "",
+		Facebook: "",
+		Tumblr:   "",
+	})
 	return model.NewAccount(user), nil
 }
 

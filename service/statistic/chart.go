@@ -28,7 +28,7 @@ type chart struct {
 func NewChart(client *client.Client, opts ...Option) Chart {
 	cfg := &Config{
 		database:     appwrite.NewDatabases(*client),
-		databaseID:   "6510add9771bcf260b40",
+		databaseID:   "651213bf7705981232aa",
 		collectionID: "689d17bb000013a8cf61",
 	}
 	for _, opt := range opts {
