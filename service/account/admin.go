@@ -14,6 +14,7 @@ import (
 
 type Admin interface {
 	GetUser(userId string) (*model.Account, error)
+	SignIn(email, password string) (*model.Session, error)
 	SignUp(username, email, password string) (*model.Account, error)
 	PasswordReset(email string, recoveryUrl string) (*model.Token, error)
 	UpdateVerification(secret, userId string) (*model.Token, error)
@@ -48,6 +49,20 @@ func (s *admin) GetUser(userId string) (*model.Account, error) {
 		return nil, fmt.Errorf("failed to get user %s: %w", userId, err)
 	}
 	return model.NewAccount(user), nil
+}
+
+func (s *admin) SignIn(email, password string) (*model.Session, error) {
+	if email == "" {
+		return nil, fmt.Errorf("email cannot be empty")
+	}
+	if password == "" {
+		return nil, fmt.Errorf("password cannot be empty")
+	}
+	passwordSession, err := s.account.CreateEmailPasswordSession(email, password)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create email password session: %w", err)
+	}
+	return &model.Session{Session: passwordSession}, nil
 }
 
 func (s *admin) SignUp(username, email, password string) (*model.Account, error) {

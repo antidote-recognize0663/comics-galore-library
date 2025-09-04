@@ -11,7 +11,7 @@ import (
 )
 
 type Session interface {
-	SignIn(email, password string) (*model.Session, error)
+	//SignIn(email, password string) (*model.Session, error)
 	DeleteCurrentSession(secret string) error
 	GetAccount(secret string) (*model.Account, error)
 	GetAccount2(secret string) (*model.Account, error)
@@ -147,7 +147,7 @@ func NewSession(options ...Option) Session {
 	}
 }
 
-func (s *session) SignIn(email, password string) (*model.Session, error) {
+/*func (s *session) SignIn(email, password string) (*model.Session, error) {
 	if email == "" {
 		return nil, fmt.Errorf("email cannot be empty")
 	}
@@ -161,7 +161,7 @@ func (s *session) SignIn(email, password string) (*model.Session, error) {
 		return nil, fmt.Errorf("failed to create session: %w", err)
 	}
 	return &model.Session{Session: session}, nil
-}
+}*/
 
 func (s *session) DeleteCurrentSession(secret string) error {
 	if secret == "" {
