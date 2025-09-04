@@ -69,6 +69,7 @@ func (s *session) GetPrefs(secret string) (*model.Prefs, error) {
 }
 
 type Config struct {
+	apiKey    string
 	endpoint  string
 	projectID string
 }
