@@ -13,7 +13,6 @@ import (
 )
 
 type Admin interface {
-	SignIn(email, password string) (*model.Session, error)
 	GetUser(userId string) (*model.Account, error)
 	SignUp(username, email, password string) (*model.Account, error)
 	PasswordReset(email string, recoveryUrl string) (*model.Token, error)
@@ -38,20 +37,6 @@ func NewAdmin(client *client.Client) Admin {
 		user:    appwrite.NewUsers(*client),
 		account: appwrite.NewAccount(*client),
 	}
-}
-
-func (s *admin) SignIn(email, password string) (*model.Session, error) {
-	if email == "" {
-		return nil, fmt.Errorf("email cannot be empty")
-	}
-	if password == "" {
-		return nil, fmt.Errorf("password cannot be empty")
-	}
-	session, err := s.account.CreateEmailPasswordSession(email, password)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create session: %w", err)
-	}
-	return &model.Session{Session: session}, nil
 }
 
 func (s *admin) GetUser(userId string) (*model.Account, error) {

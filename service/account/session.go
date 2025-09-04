@@ -11,6 +11,7 @@ import (
 )
 
 type Session interface {
+	SignIn(email, password string) (*model.Session, error)
 	DeleteCurrentSession(secret string) error
 	GetAccount(secret string) (*model.Account, error)
 	GetAccount2(secret string) (*model.Account, error)
@@ -144,6 +145,22 @@ func NewSession(options ...Option) Session {
 		endpoint:  cfg.endpoint,
 		projectID: cfg.projectID,
 	}
+}
+
+func (s *session) SignIn(email, password string) (*model.Session, error) {
+	if email == "" {
+		return nil, fmt.Errorf("email cannot be empty")
+	}
+	if password == "" {
+		return nil, fmt.Errorf("password cannot be empty")
+	}
+	client := appwrite.NewClient(appwrite.WithEndpoint(s.endpoint), appwrite.WithProject(s.projectID))
+	account := appwrite.NewAccount(client)
+	session, err := account.CreateEmailPasswordSession(email, password)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create session: %w", err)
+	}
+	return &model.Session{Session: session}, nil
 }
 
 func (s *session) DeleteCurrentSession(secret string) error {
