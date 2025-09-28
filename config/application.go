@@ -66,7 +66,7 @@ func (a *applicationConfig) GetSubscriptionPlan(id string) (SubscriptionPlan, bo
 			return plan, true
 		}
 	}
-	return nil, false // Not found
+	return nil, false
 }
 
 func (a *applicationConfig) GetCategory(key string) (Category, bool) {
@@ -80,10 +80,10 @@ func (a *applicationConfig) GetCategory(key string) (Category, bool) {
 func NewApplicationConfig() ApplicationConfig {
 	var parseErr error
 	config := &applicationConfig{
-		Env:               GetEnv("ENV", "development"),
+		Env:               GetEnv("ENV", "dev"),
 		Port:              GetIntEnv("PORT", 3000, &parseErr),
 		AppName:           GetEnv("APP_NAME", "Comics Galore"),
-		BaseUrl:           GetEnv("BASE_URL", "http://localhost:3000"),
+		BaseUrl:           GetEnv("BASE_URL", "https://appwrite.comics-galore.co"),
 		JwtSecret:         GetEnv("JWT_SECRET", "PzBK+Wmb6LtK+8PfiLQ+dWLCsRnsTQm3v+He14YuZac="),
 		Categories:        NewCategories(),
 		SubscriptionPlans: NewSubscriptionPlans(),
