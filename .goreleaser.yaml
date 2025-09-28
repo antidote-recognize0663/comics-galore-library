@@ -17,8 +17,8 @@ archives:
 
 release:
   github:
-    owner: your-github-username
-    name: your-repo-name
+    owner: antidote-recognize0663
+    name: comics-galore-library
 
 changelog:
   sort: asc
