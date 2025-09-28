@@ -1,24 +1,28 @@
+version: 2
+
 project_name: comics-galore-library
 
-release:
-  # Publish GitHub releases but skip binaries (library usually no executables)
-  disable: false
-
+# Skip building binaries for libraries
 builds:
-  # Empty builds to prevent binary creation
-  - id: library
-    skip: true
+  - binary: ""
+    goos: [ ]
+    goarch: [ ]
 
 archives:
   - format: tar.gz
     files:
-      - LICENSE
-      - README.md
-      - go.mod
-      - '**/*.go'
+      - "**/*.go"
+      - "go.mod"
+      - "go.sum"
 
-checksum:
-  name_template: checksums.txt
+release:
+  github:
+    owner: your-github-username
+    name: your-repo-name
 
 changelog:
   sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
